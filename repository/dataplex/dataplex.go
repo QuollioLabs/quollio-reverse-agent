@@ -56,8 +56,8 @@ func (d *DataplexClient) LookupEntry(assetFQN, projectName, location string) (*d
 	}
 	lookupEntryRequest := datacatalogpb.LookupEntryRequest{
 		TargetName: fqn,
-		Project: projectName,
-		Location: location,
+		Project:    projectName,
+		Location:   location,
 	}
 	res, err := d.CatalogClient.LookupEntry(ctx, &lookupEntryRequest)
 	if err != nil {

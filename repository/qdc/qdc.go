@@ -102,7 +102,7 @@ func (q *QDCExternalAPI) postRequest(url string, payload *strings.Reader) (*http
 	}
 	switch resp.StatusCode {
 	case http.StatusOK:
-		return resp,nil
+		return resp, nil
 	case http.StatusTooManyRequests, http.StatusInternalServerError, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
 		fmt.Printf("QDC API returns %v. then now retrying", resp.StatusCode)
 	default:
@@ -110,7 +110,6 @@ func (q *QDCExternalAPI) postRequest(url string, payload *strings.Reader) (*http
 	}
 	return resp, nil
 }
-
 
 func (q *QDCExternalAPI) GetAccessToken() (string, error) {
 	url := fmt.Sprintf("%s/oauth2/token", q.BaseURL)

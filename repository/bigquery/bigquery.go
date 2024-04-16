@@ -9,7 +9,6 @@ import (
 	"google.golang.org/api/option"
 )
 
-
 type BigQueryClient struct {
 	BQClient *bigquery.Client
 }
@@ -37,7 +36,7 @@ func NewBigQueryClient(serviceAccountCredentialJson string) (BigQueryClient, err
 	return client, nil
 }
 
-func(b *BigQueryClient) GetDatasetMetadata(datasetID string) (*bigquery.DatasetMetadata, error) {
+func (b *BigQueryClient) GetDatasetMetadata(datasetID string) (*bigquery.DatasetMetadata, error) {
 	ctx := context.Background()
 	dataset := b.BQClient.Dataset(datasetID)
 	datasetMetadata, err := dataset.Metadata(ctx)
@@ -47,7 +46,7 @@ func(b *BigQueryClient) GetDatasetMetadata(datasetID string) (*bigquery.DatasetM
 	return datasetMetadata, nil
 }
 
-func(b *BigQueryClient) UpdateDatasetDescription(datasetID, description string) (*bigquery.DatasetMetadata, error) {
+func (b *BigQueryClient) UpdateDatasetDescription(datasetID, description string) (*bigquery.DatasetMetadata, error) {
 	ctx := context.Background()
 	dataset := b.BQClient.Dataset(datasetID)
 	datasetMetadata, err := dataset.Update(ctx, bigquery.DatasetMetadataToUpdate{
@@ -59,7 +58,7 @@ func(b *BigQueryClient) UpdateDatasetDescription(datasetID, description string) 
 	return datasetMetadata, nil
 }
 
-func(b *BigQueryClient) GetTableMetadata(datasetID, tableName string) (*bigquery.TableMetadata, error) {
+func (b *BigQueryClient) GetTableMetadata(datasetID, tableName string) (*bigquery.TableMetadata, error) {
 	ctx := context.Background()
 	table := b.BQClient.Dataset(datasetID).Table(tableName)
 	tableMetadata, err := table.Metadata(ctx)
@@ -69,7 +68,7 @@ func(b *BigQueryClient) GetTableMetadata(datasetID, tableName string) (*bigquery
 	return tableMetadata, nil
 }
 
-func(b *BigQueryClient) UpdateTableMetadata(datasetID, tableName string, metadata bigquery.TableMetadataToUpdate) (*bigquery.TableMetadata, error) {
+func (b *BigQueryClient) UpdateTableMetadata(datasetID, tableName string, metadata bigquery.TableMetadataToUpdate) (*bigquery.TableMetadata, error) {
 	ctx := context.Background()
 	table := b.BQClient.Dataset(datasetID).Table(tableName)
 	tableMetadata, err := table.Update(ctx, metadata, "")

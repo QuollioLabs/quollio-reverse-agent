@@ -10,7 +10,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-
 func TestGetSpecifiedAssetFromPath(t *testing.T) {
 	testCases := []struct {
 		Input struct {
