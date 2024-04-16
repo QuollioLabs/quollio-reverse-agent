@@ -44,7 +44,7 @@ func NewBuiltinLogger() *BuiltinLogger {
 
 func (l *BuiltinLogger) Debug(format string, args ...interface{}) {
 	if l.level >= DEBUG {
-		prefix := "DEBG"
+		prefix := "[DEBG] "
 		l.logger.SetOutput(os.Stdout)
 		l.logger.SetPrefix(prefix)
 		l.logger.SetFlags(log.Ldate | log.Ltime)
@@ -61,7 +61,7 @@ func (l *BuiltinLogger) Debug(format string, args ...interface{}) {
 
 func (l *BuiltinLogger) Info(format string, args ...interface{}) {
 	if l.level >= INFO {
-		prefix := "INFO"
+		prefix := "[INFO] "
 		l.logger.SetOutput(os.Stdout)
 		l.logger.SetPrefix(prefix)
 		l.logger.SetFlags(log.Ldate | log.Ltime)
@@ -71,7 +71,7 @@ func (l *BuiltinLogger) Info(format string, args ...interface{}) {
 
 func (l *BuiltinLogger) Warning(format string, args ...interface{}) {
 	if l.level >= WARNING {
-		prefix := "WARN"
+		prefix := "[WARN] "
 		l.logger.SetOutput(os.Stdout)
 		l.logger.SetPrefix(prefix)
 		l.logger.SetFlags(log.Ldate | log.Ltime)
@@ -81,7 +81,7 @@ func (l *BuiltinLogger) Warning(format string, args ...interface{}) {
 
 func (l *BuiltinLogger) Error(format string, args ...interface{}) {
 	if l.level >= ERROR {
-		prefix := "EROR"
+		prefix := "[EROR] "
 		l.logger.SetOutput(os.Stdout)
 		l.logger.SetPrefix(prefix)
 		l.logger.SetFlags(log.Ldate | log.Ltime)
@@ -98,7 +98,7 @@ func (l *BuiltinLogger) Error(format string, args ...interface{}) {
 
 func (l *BuiltinLogger) Fatal(format string, args ...interface{}) {
 	if l.level >= ERROR {
-		prefix := "EROR"
+		prefix := "[EROR] "
 		l.logger.SetOutput(os.Stdout)
 		l.logger.SetPrefix(prefix)
 		l.logger.SetFlags(log.Ldate | log.Ltime)
