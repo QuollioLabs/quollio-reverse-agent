@@ -1,6 +1,6 @@
 module quollio-reverse-agent
 
-go 1.21.1
+go 1.21
 
 require google.golang.org/api v0.172.0
 
