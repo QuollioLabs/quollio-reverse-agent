@@ -19,10 +19,6 @@ type BigQueryConnector struct {
 	Logger               *logger.BuiltinLogger
 }
 
-type DatasetAssets struct {
-	ParentPhysicalName string
-}
-
 func NewBigqueryConnector(logger *logger.BuiltinLogger) (BigQueryConnector, error) {
 	serviceCreds := os.Getenv("GOOGLE_CLOUD_SERVICE_ACCOUNT_CREDENTIALS")
 	dataplexClient, err := dataplex.NewDataplexClient(serviceCreds)
