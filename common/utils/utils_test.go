@@ -1,7 +1,7 @@
 package utils_test
 
 import (
-	"quollio-reverse-agent/utils"
+	"quollio-reverse-agent/common/utils"
 	"reflect"
 	"testing"
 )
