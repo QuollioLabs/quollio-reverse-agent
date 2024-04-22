@@ -7,6 +7,7 @@ import (
 	"quollio-reverse-agent/repository/qdc"
 	"quollio-reverse-agent/utils"
 
+	glueService "github.com/aws/aws-sdk-go-v2/service/glue"
 	"github.com/aws/aws-sdk-go-v2/service/glue/types"
 )
 
@@ -24,16 +25,16 @@ func NewGlueConnector(logger *logger.BuiltinLogger) (GlueConnector, error) {
 	if err != nil {
 		return GlueConnector{}, err
 	}
-	
+
 	qdcBaseURL := os.Getenv("QDC_BASE_URL")
 	qdcClientID := os.Getenv("QDC_CLIENT_ID")
 	qdcClientSecret := os.Getenv("QDC_CLIENT_SECRET")
-	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret)	
+	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret)
 	connector := GlueConnector{
 		QDCExternalAPIClient: externalAPI,
-		GlueRepo: glueClient,
-		AthenaAccountID: os.Getenv("ATHENA_ACCOUNT_ID"),
-		Logger: logger,
+		GlueRepo:             glueClient,
+		AthenaAccountID:      os.Getenv("ATHENA_ACCOUNT_ID"),
+		Logger:               logger,
 	}
 
 	return connector, nil
@@ -117,7 +118,7 @@ func (g *GlueConnector) ReflectDatabaseDescToAthena(dbAssets []qdc.Data) error {
 		if glueDB, ok := mapDBAssetByDBName[dbAsset.PhysicalName]; ok {
 			if *glueDB.Description == "" && dbAsset.Description != "" {
 				dbInput := types.DatabaseInput{
-					Name: glueDB.Name,
+					Name:        glueDB.Name,
 					Description: &dbAsset.Description,
 				}
 				_, err := g.GlueRepo.UpdateDatabase(dbInput, g.AthenaAccountID, *glueDB.Name)
@@ -144,47 +145,35 @@ func (g GlueConnector) GetAllDatabases() ([]types.Database, error) {
 		if *dbOutput.NextToken == "" {
 			return glueDatabases, err
 		}
-		nextToken =*dbOutput.NextToken
-	}	
+		nextToken = *dbOutput.NextToken
+	}
 }
 
 func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) error {
 	for _, tableAsset := range tableAssets {
-		shouldBeUpdated := false
+		tableShouldBeUpdated := false
 		databaseAsset := GetSpecifiedAssetFromPath(tableAsset, "schema3")
-		
+
 		glueTable, err := g.GlueRepo.GetTable(g.AthenaAccountID, databaseAsset.Name)
 		if err != nil {
 			return err
 		}
-		
-		var tableInput types.TableInput
+
+		tableInput := types.TableInput{
+			Name:        glueTable.Table.Name,
+			Description: glueTable.Table.Description,
+		}
 		if *glueTable.Table.Description == "" && tableAsset.Description != "" {
 			tableInput.Description = &tableAsset.Description
-			shouldBeUpdated = true
+			tableShouldBeUpdated = true
 		}
 
 		columnAssets, err := g.GetChildAssetsByParentAsset(tableAsset)
 		if err != nil {
 			return err
 		}
-		var updatedColumns []types.Column
-		mapColumnAssetByColumnName := MapColumnAssetByColumnName(columnAssets)
-		for _, column := range glueTable.Table.StorageDescriptor.Columns {
-			if columnAsset, ok := mapColumnAssetByColumnName[*column.Name]; ok {
-				if columnAsset.Description != "" && *column.Comment == "" {
-					updatedColumn := column
-					updatedColumn.Comment = &columnAsset.Description
-					updatedColumns = append(updatedColumns, updatedColumn)
-					shouldBeUpdated = true
-				} else {
-					updatedColumns = append(updatedColumns, column)
-				}
-			} else {
-				updatedColumns = append(updatedColumns, column)
-			}
-		}
-		if shouldBeUpdated {
+		updatedColumns, columnShouldBeUpdated := GetDescUpdatedColumns(glueTable, columnAssets)
+		if tableShouldBeUpdated || columnShouldBeUpdated {
 			tableInput.StorageDescriptor.Columns = updatedColumns
 			_, err := g.GlueRepo.UpdateTable(g.AthenaAccountID, databaseAsset.Name, tableInput)
 			if err != nil {
@@ -193,24 +182,6 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 		}
 	}
 	return nil
-}
-
-func (g GlueConnector) GetAllTables(dbName string) ([]types.Table, error) {
-	var glueTables []types.Table
-	var nextToken string
-	for {
-		tableOutput, err := g.GlueRepo.GetTables(g.AthenaAccountID, dbName, nextToken)
-		if err != nil {
-			return []types.Table{}, err
-		}
-		for _, table := range tableOutput.TableList {
-			glueTables = append(glueTables, table)
-		}
-		if *tableOutput.NextToken == "" {
-			return glueTables, err
-		}
-		nextToken =*tableOutput.NextToken
-	}	
 }
 
 func (g *GlueConnector) ReflectMetadataToDataCatalog() error {
@@ -247,6 +218,27 @@ func (g *GlueConnector) ReflectMetadataToDataCatalog() error {
 		return err
 	}
 	return nil
+}
+
+func GetDescUpdatedColumns(glueTable *glueService.GetTableOutput, columnAssets []qdc.Data) ([]types.Column, bool) {
+	var updatedColumns []types.Column
+	shouldBeUpdated := false
+	mapColumnAssetByColumnName := MapColumnAssetByColumnName(columnAssets)
+	for _, column := range glueTable.Table.StorageDescriptor.Columns {
+		if columnAsset, ok := mapColumnAssetByColumnName[*column.Name]; ok {
+			if columnAsset.Description != "" && *column.Comment == "" {
+				updatedColumn := column
+				updatedColumn.Comment = &columnAsset.Description
+				updatedColumns = append(updatedColumns, updatedColumn)
+				shouldBeUpdated = true
+			} else {
+				updatedColumns = append(updatedColumns, column)
+			}
+		} else {
+			updatedColumns = append(updatedColumns, column)
+		}
+	}
+	return updatedColumns, shouldBeUpdated
 }
 
 func MapColumnAssetByColumnName(columnAssets []qdc.Data) map[string]qdc.Data {
