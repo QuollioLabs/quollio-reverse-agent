@@ -52,3 +52,11 @@ To run unit tests, run the following command.
 ```
 $ make test
 ```
+
+### Run locally (ローカル実行)
+Please specify the system-name such as bigquery or athena. 
+system-nameには、bigqueryやathenaのような取り込み先のシステム名を指定してください 
+
+```
+$ go run main.go -system-name=<system-name>
+```

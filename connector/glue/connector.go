@@ -1,9 +1,11 @@
 package glue
 
 import (
+	"errors"
 	"os"
 	"quollio-reverse-agent/common/logger"
 	"quollio-reverse-agent/repository/glue"
+	"quollio-reverse-agent/repository/glue/code"
 	"quollio-reverse-agent/repository/qdc"
 	"quollio-reverse-agent/utils"
 
@@ -21,6 +23,7 @@ type GlueConnector struct {
 func NewGlueConnector(logger *logger.BuiltinLogger) (GlueConnector, error) {
 	iamRoleARN := os.Getenv("AWS_IAM_ROLE_FOR_GLUE_TABLE")
 	profileName := os.Getenv("PROFILE_NAME")
+	athenaAccountID := os.Getenv("ATHENA_ACCOUNT_ID")
 	glueClient, err := glue.NewGlueClient(iamRoleARN, profileName)
 	if err != nil {
 		return GlueConnector{}, err
@@ -33,7 +36,7 @@ func NewGlueConnector(logger *logger.BuiltinLogger) (GlueConnector, error) {
 	connector := GlueConnector{
 		QDCExternalAPIClient: externalAPI,
 		GlueRepo:             glueClient,
-		AthenaAccountID:      os.Getenv("ATHENA_ACCOUNT_ID"),
+		AthenaAccountID:      athenaAccountID,
 		Logger:               logger,
 	}
 
@@ -116,13 +119,24 @@ func (g *GlueConnector) ReflectDatabaseDescToAthena(dbAssets []qdc.Data) error {
 
 	for _, dbAsset := range dbAssets {
 		if glueDB, ok := mapDBAssetByDBName[dbAsset.PhysicalName]; ok {
-			if *glueDB.Description == "" && dbAsset.Description != "" {
+			if glueDB.Description == nil && dbAsset.Description != "" {
 				dbInput := types.DatabaseInput{
 					Name:        glueDB.Name,
 					Description: &dbAsset.Description,
 				}
-				_, err := g.GlueRepo.UpdateDatabase(dbInput, g.AthenaAccountID, *glueDB.Name)
+				var dbName string
+				if glueDB.Name != nil {
+					dbName = *glueDB.Name
+				}
+				_, err := g.GlueRepo.UpdateDatabase(dbInput, g.AthenaAccountID, dbName)
 				if err != nil {
+					var ge *code.GlueError
+					if errors.As(err, &ge) {
+						if ge.ErrorReason == code.RESOURCE_NOT_FOUND {
+							g.Logger.Warning("Database Not Found in your AWS account. Skip to ingest the table name: %s", dbName)
+							continue
+						}
+					}
 					return err
 				}
 			}
@@ -142,7 +156,7 @@ func (g GlueConnector) GetAllDatabases() ([]types.Database, error) {
 		for _, db := range dbOutput.DatabaseList {
 			glueDatabases = append(glueDatabases, db)
 		}
-		if *dbOutput.NextToken == "" {
+		if dbOutput.NextToken == nil {
 			return glueDatabases, err
 		}
 		nextToken = *dbOutput.NextToken
@@ -154,8 +168,15 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 		tableShouldBeUpdated := false
 		databaseAsset := GetSpecifiedAssetFromPath(tableAsset, "schema3")
 
-		glueTable, err := g.GlueRepo.GetTable(g.AthenaAccountID, databaseAsset.Name)
+		glueTable, err := g.GlueRepo.GetTable(g.AthenaAccountID, databaseAsset.Name, tableAsset.PhysicalName)
 		if err != nil {
+			var ge *code.GlueError
+			if errors.As(err, &ge) {
+				if ge.ErrorReason == code.RESOURCE_NOT_FOUND {
+					g.Logger.Warning("Table Not Found in your AWS account. Skip to ingest the table name: %s", tableAsset.PhysicalName)
+					continue
+				}
+			}
 			return err
 		}
 
@@ -163,7 +184,7 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 			Name:        glueTable.Table.Name,
 			Description: glueTable.Table.Description,
 		}
-		if *glueTable.Table.Description == "" && tableAsset.Description != "" {
+		if glueTable.Table.Description == nil && tableAsset.Description != "" {
 			tableInput.Description = &tableAsset.Description
 			tableShouldBeUpdated = true
 		}
@@ -225,8 +246,12 @@ func GetDescUpdatedColumns(glueTable *glueService.GetTableOutput, columnAssets [
 	shouldBeUpdated := false
 	mapColumnAssetByColumnName := MapColumnAssetByColumnName(columnAssets)
 	for _, column := range glueTable.Table.StorageDescriptor.Columns {
-		if columnAsset, ok := mapColumnAssetByColumnName[*column.Name]; ok {
-			if columnAsset.Description != "" && *column.Comment == "" {
+		var columnName string
+		if column.Name != nil {
+			columnName = *column.Name
+		}
+		if columnAsset, ok := mapColumnAssetByColumnName[columnName]; ok {
+			if columnAsset.Description != "" && column.Comment == nil {
 				updatedColumn := column
 				updatedColumn.Comment = &columnAsset.Description
 				updatedColumns = append(updatedColumns, updatedColumn)
@@ -262,7 +287,11 @@ func GetSpecifiedAssetFromPath(asset qdc.Data, pathLayer string) qdc.Path {
 func MapDBAssetByDBName(databases []types.Database) map[string]types.Database {
 	mapDBAssetByDBName := make(map[string]types.Database)
 	for _, database := range databases {
-		mapDBAssetByDBName[*database.Name] = database
+		var dbName string
+		if database.Name != nil {
+			dbName = *database.Name
+		}
+		mapDBAssetByDBName[dbName] = database
 	}
 	return mapDBAssetByDBName
 }
@@ -270,7 +299,11 @@ func MapDBAssetByDBName(databases []types.Database) map[string]types.Database {
 func MapTableAssetByTableName(tables []types.Table) map[string]types.Table {
 	mapTableAssetByTableName := make(map[string]types.Table)
 	for _, table := range tables {
-		mapTableAssetByTableName[*table.Name] = table
+		var tableName string
+		if table.Name != nil {
+			tableName = *table.Name
+		}
+		mapTableAssetByTableName[tableName] = table
 	}
 	return mapTableAssetByTableName
 }
