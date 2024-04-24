@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/glue"
-	"github.com/aws/aws-sdk-go-v2/service/glue/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 
 	awsHttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
@@ -96,14 +95,9 @@ func (g *GlueClient) GetDatabases(accountID, nextToken string) (*glue.GetDatabas
 	return dbs, nil
 }
 
-func (g *GlueClient) UpdateDatabase(dbInput types.DatabaseInput, accountID, databaseName string) (*glue.UpdateDatabaseOutput, error) {
+func (g *GlueClient) UpdateDatabase(updateDatabaseInput glue.UpdateDatabaseInput, accountID string) (*glue.UpdateDatabaseOutput, error) {
 	ctx := context.Background()
-	updateDBsInput := glue.UpdateDatabaseInput{
-		DatabaseInput: &dbInput,
-		CatalogId:     &accountID,
-		Name:          &databaseName,
-	}
-	output, err := g.GlueClient.UpdateDatabase(ctx, &updateDBsInput)
+	output, err := g.GlueClient.UpdateDatabase(ctx, &updateDatabaseInput)
 	if err != nil {
 		var re *awsHttp.ResponseError
 		if errors.As(err, &re) {
@@ -170,14 +164,10 @@ func (g *GlueClient) GetTable(catalogID, dbName, tableName string) (*glue.GetTab
 	return table, nil
 }
 
-func (g *GlueClient) UpdateTable(catalogID, dbName string, tableInput types.TableInput) (*glue.UpdateTableOutput, error) {
+func (g *GlueClient) UpdateTable(catalogID, dbName string, uti glue.UpdateTableInput) (*glue.UpdateTableOutput, error) {
 	ctx := context.Background()
-	updateTableInput := glue.UpdateTableInput{
-		CatalogId:    &catalogID,
-		TableInput:   &tableInput,
-		DatabaseName: &dbName,
-	}
-	output, err := g.GlueClient.UpdateTable(ctx, &updateTableInput)
+
+	output, err := g.GlueClient.UpdateTable(ctx, &uti)
 	if err != nil {
 		var re *awsHttp.ResponseError
 		if errors.As(err, &re) {

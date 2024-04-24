@@ -1,10 +1,12 @@
 package glue_test
 
 import (
+	"encoding/json"
 	"quollio-reverse-agent/connector/glue"
 	"quollio-reverse-agent/repository/qdc"
 	"reflect"
 	"testing"
+	"time"
 
 	glueService "github.com/aws/aws-sdk-go-v2/service/glue"
 	"github.com/aws/aws-sdk-go-v2/service/glue/types"
@@ -337,7 +339,7 @@ func TestGetDescUpdatedColumns(t *testing.T) {
 								},
 								{
 									Name:    genStringPointer("test-column2"),
-									Comment: genStringPointer(""),
+									Comment: nil,
 								},
 								{
 									Name:    genStringPointer("test-column3"),
@@ -345,7 +347,7 @@ func TestGetDescUpdatedColumns(t *testing.T) {
 								},
 								{
 									Name:    genStringPointer("test-column4"),
-									Comment: genStringPointer(""),
+									Comment: nil,
 								},
 							},
 						},
@@ -389,7 +391,7 @@ func TestGetDescUpdatedColumns(t *testing.T) {
 					},
 					{
 						Name:    genStringPointer("test-column4"),
-						Comment: genStringPointer(""),
+						Comment: nil,
 					},
 				},
 				ShouldBeUpdated: true,
@@ -399,6 +401,614 @@ func TestGetDescUpdatedColumns(t *testing.T) {
 	for _, testCase := range testCases {
 		res, b := glue.GetDescUpdatedColumns(testCase.Input.GlueTable, testCase.Input.ColumnAssets)
 		if !reflect.DeepEqual(res, testCase.Expect.Columns) || b != testCase.Expect.ShouldBeUpdated {
+			t.Errorf("want %v but got %v.", testCase.Expect, res)
+		}
+	}
+}
+
+func TestGenUpdateMessage(t *testing.T) {
+	testCases := []struct {
+		Input struct {
+			TableUpdated  bool
+			ColumnUpdated bool
+		}
+		Expect string
+	}{
+		{
+			Input: struct {
+				TableUpdated  bool
+				ColumnUpdated bool
+			}{
+				true,
+				true,
+			},
+			Expect: "Both table and column descriptions were updated.",
+		},
+		{
+			Input: struct {
+				TableUpdated  bool
+				ColumnUpdated bool
+			}{
+				true,
+				false,
+			},
+			Expect: "Table description was updated.",
+		},
+		{
+			Input: struct {
+				TableUpdated  bool
+				ColumnUpdated bool
+			}{
+				false,
+				true,
+			},
+			Expect: "Column descriptions were updated.",
+		},
+		{
+			Input: struct {
+				TableUpdated  bool
+				ColumnUpdated bool
+			}{
+				false,
+				false,
+			},
+			Expect: "Nothing was updated.",
+		},
+	}
+	for _, testCase := range testCases {
+		res := glue.GenUpdateMessage(testCase.Input.TableUpdated, testCase.Input.ColumnUpdated)
+		if res != testCase.Expect {
+			t.Errorf("want %v but got %v.", testCase.Expect, res)
+		}
+	}
+}
+
+func TestGenUpdateDatabaseInput(t *testing.T) {
+	testCases := []struct {
+		Input  types.Database
+		Expect glueService.UpdateDatabaseInput
+	}{
+		{
+			Input: types.Database{
+				Name:      genStringPointer("test-db1"),
+				CatalogId: genStringPointer("AwsDataCatalog"),
+				CreateTableDefaultPermissions: []types.PrincipalPermissions{
+					{
+						Permissions: []types.Permission{
+							"READ",
+						},
+						Principal: &types.DataLakePrincipal{
+							DataLakePrincipalIdentifier: genStringPointer("test-dl-pi1"),
+						},
+					},
+				},
+				CreateTime:  &time.Time{},
+				Description: genStringPointer("test-desc1"),
+				FederatedDatabase: &types.FederatedDatabase{
+					ConnectionName: genStringPointer("test-conn1"),
+					Identifier:     genStringPointer("test-conn-identifier1"),
+				},
+				LocationUri: genStringPointer("test-loc1"),
+				Parameters: map[string]string{
+					"test-key1": "test-value1",
+					"test-key2": "test-value2",
+				},
+				TargetDatabase: &types.DatabaseIdentifier{
+					CatalogId:    genStringPointer("AwsDataCatalog"),
+					DatabaseName: genStringPointer("test-db1"),
+					Region:       genStringPointer("ap-northeast-1"),
+				},
+			},
+			Expect: glueService.UpdateDatabaseInput{
+				DatabaseInput: &types.DatabaseInput{
+					Name: genStringPointer("test-db1"),
+					CreateTableDefaultPermissions: []types.PrincipalPermissions{
+						{
+							Permissions: []types.Permission{
+								"READ",
+							},
+							Principal: &types.DataLakePrincipal{
+								DataLakePrincipalIdentifier: genStringPointer("test-dl-pi1"),
+							},
+						},
+					},
+					Description: genStringPointer("test-desc1"),
+					FederatedDatabase: &types.FederatedDatabase{
+						ConnectionName: genStringPointer("test-conn1"),
+						Identifier:     genStringPointer("test-conn-identifier1"),
+					},
+					LocationUri: genStringPointer("test-loc1"),
+					Parameters: map[string]string{
+						"test-key1": "test-value1",
+						"test-key2": "test-value2",
+					},
+					TargetDatabase: &types.DatabaseIdentifier{
+						CatalogId:    genStringPointer("AwsDataCatalog"),
+						DatabaseName: genStringPointer("test-db1"),
+						Region:       genStringPointer("ap-northeast-1"),
+					},
+				},
+				Name:      genStringPointer("test-db1"),
+				CatalogId: genStringPointer("AwsDataCatalog"),
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		res := glue.GenUpdateDatabaseInput(testCase.Input)
+		got, err := json.Marshal(res)
+		if err != nil {
+			t.Errorf("parse failed. %s", err.Error())
+		}
+		want, err := json.Marshal(testCase.Expect)
+		if err != nil {
+			t.Errorf("parse failed. %s", err.Error())
+		}
+		if string(got) != string(want) {
+			t.Errorf("want %v but got %v.", want, got)
+		}
+	}
+}
+
+func TestGenUpdateTableInput(t *testing.T) {
+	testCases := []struct {
+		Input  *glueService.GetTableOutput
+		Expect glueService.UpdateTableInput
+	}{
+		{
+			Input: &glueService.GetTableOutput{
+				Table: &types.Table{
+					Name:             genStringPointer("test-table1"),
+					CatalogId:        genStringPointer("AwsDataCatalog"),
+					DatabaseName:     genStringPointer("test-db1"),
+					Description:      genStringPointer("test-desc1"),
+					LastAccessTime:   &time.Time{},
+					LastAnalyzedTime: &time.Time{},
+					Owner:            genStringPointer("quollio"),
+					Parameters: map[string]string{
+						"test-key1": "test-value1",
+						"test-key2": "test-value2",
+					},
+					PartitionKeys: []types.Column{
+						{
+							Name:    genStringPointer("id"),
+							Comment: genStringPointer("id-comment"),
+							Type:    genStringPointer("string"),
+						},
+					},
+					Retention: int32(1),
+					StorageDescriptor: &types.StorageDescriptor{
+						Columns: []types.Column{
+							{
+								Name:    genStringPointer("id"),
+								Comment: genStringPointer("id-comment"),
+								Type:    genStringPointer("string"),
+							},
+							{
+								Name:    genStringPointer("name"),
+								Comment: genStringPointer("name-comment"),
+								Type:    genStringPointer("string"),
+							},
+							{
+								Name:    genStringPointer("age"),
+								Comment: genStringPointer("name-comment"),
+								Type:    genStringPointer("int"),
+							},
+						},
+					},
+					TableType: genStringPointer("EXTERNAL_TABLE"),
+					TargetTable: &types.TableIdentifier{
+						CatalogId:    genStringPointer("AwsDataCatalog"),
+						DatabaseName: genStringPointer("test-db1"),
+						Name:         genStringPointer("test-table1"),
+						Region:       genStringPointer("ap-northeast-1"),
+					},
+					ViewExpandedText: genStringPointer("test-view-expanded-text"),
+					ViewOriginalText: genStringPointer("test-view-original-text"),
+				},
+			},
+			Expect: glueService.UpdateTableInput{
+				CatalogId:    genStringPointer("AwsDataCatalog"),
+				DatabaseName: genStringPointer("test-db1"),
+				TableInput: &types.TableInput{
+					Description:      genStringPointer("test-desc1"),
+					LastAccessTime:   &time.Time{},
+					LastAnalyzedTime: &time.Time{},
+					Name:             genStringPointer("test-table1"),
+					Owner:            genStringPointer("quollio"),
+					Parameters: map[string]string{
+						"test-key1": "test-value1",
+						"test-key2": "test-value2",
+					},
+					PartitionKeys: []types.Column{
+						{
+							Name:    genStringPointer("id"),
+							Comment: genStringPointer("id-comment"),
+							Type:    genStringPointer("string"),
+						},
+					},
+					Retention: int32(1),
+					StorageDescriptor: &types.StorageDescriptor{
+						Columns: []types.Column{
+							{
+								Name:    genStringPointer("id"),
+								Comment: genStringPointer("id-comment"),
+								Type:    genStringPointer("string"),
+							},
+							{
+								Name:    genStringPointer("name"),
+								Comment: genStringPointer("name-comment"),
+								Type:    genStringPointer("string"),
+							},
+							{
+								Name:    genStringPointer("age"),
+								Comment: genStringPointer("name-comment"),
+								Type:    genStringPointer("int"),
+							},
+						},
+					},
+					TableType: genStringPointer("EXTERNAL_TABLE"),
+					TargetTable: &types.TableIdentifier{
+						CatalogId:    genStringPointer("AwsDataCatalog"),
+						DatabaseName: genStringPointer("test-db1"),
+						Name:         genStringPointer("test-table1"),
+						Region:       genStringPointer("ap-northeast-1"),
+					},
+					ViewExpandedText: genStringPointer("test-view-expanded-text"),
+					ViewOriginalText: genStringPointer("test-view-original-text"),
+				},
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		res := glue.GenUpdateTableInput(testCase.Input)
+		got, err := json.Marshal(res)
+		if err != nil {
+			t.Errorf("parse failed. %s", err.Error())
+		}
+		want, err := json.Marshal(testCase.Expect)
+		if err != nil {
+			t.Errorf("parse failed. %s", err.Error())
+		}
+		if string(got) != string(want) {
+			t.Errorf("want %v but got %v.", want, got)
+		}
+	}
+}
+
+func TestShouldDatabaseBeUpdated(t *testing.T) {
+	testCases := []struct {
+		Input struct {
+			GlueDB  types.Database
+			DBAsset qdc.Data
+		}
+		Expect bool
+	}{
+		{
+			Input: struct {
+				GlueDB  types.Database
+				DBAsset qdc.Data
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db1"),
+					Description: nil,
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db1",
+					Description:  "test qdc",
+				},
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueDB  types.Database
+				DBAsset qdc.Data
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db1"),
+					Description: genStringPointer(""),
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db1",
+					Description:  "test qdc",
+				},
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueDB  types.Database
+				DBAsset qdc.Data
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db1"),
+					Description: nil,
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db1",
+					Description:  "",
+				},
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueDB  types.Database
+				DBAsset qdc.Data
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db1"),
+					Description: genStringPointer(""),
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db1",
+					Description:  "",
+				},
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueDB  types.Database
+				DBAsset qdc.Data
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db1"),
+					Description: genStringPointer("test on console"),
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db1",
+					Description:  "test qdc",
+				},
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueDB  types.Database
+				DBAsset qdc.Data
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db1"),
+					Description: genStringPointer("test on console"),
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db1",
+					Description:  "",
+				},
+			},
+			Expect: false,
+		},
+	}
+	for _, testCase := range testCases {
+		res := glue.ShouldDatabaseBeUpdated(testCase.Input.GlueDB, testCase.Input.DBAsset)
+		if res != testCase.Expect {
+			t.Errorf("want %v but got %v.", testCase.Expect, res)
+		}
+	}
+}
+
+func TestShouldTableBeUpdated(t *testing.T) {
+	testCases := []struct {
+		Input struct {
+			GlueTable  types.Table
+			TableAsset qdc.Data
+		}
+		Expect bool
+	}{
+		{
+			Input: struct {
+				GlueTable  types.Table
+				TableAsset qdc.Data
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: nil,
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "test qdc",
+				},
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueTable  types.Table
+				TableAsset qdc.Data
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: genStringPointer(""),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "test qdc",
+				},
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueTable  types.Table
+				TableAsset qdc.Data
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: nil,
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "",
+				},
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueTable  types.Table
+				TableAsset qdc.Data
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: genStringPointer(""),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "",
+				},
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueTable  types.Table
+				TableAsset qdc.Data
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: genStringPointer("test on console"),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "test qdc",
+				},
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueTable  types.Table
+				TableAsset qdc.Data
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: genStringPointer("test on console"),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "",
+				},
+			},
+			Expect: false,
+		},
+	}
+	for _, testCase := range testCases {
+		res := glue.ShouldTableBeUpdated(testCase.Input.GlueTable, testCase.Input.TableAsset)
+		if res != testCase.Expect {
+			t.Errorf("want %v but got %v.", testCase.Expect, res)
+		}
+	}
+}
+
+func TestShouldColumnBeUpdated(t *testing.T) {
+	testCases := []struct {
+		Input struct {
+			GlueColumn types.Column
+			TableAsset qdc.Data
+		}
+		Expect bool
+	}{
+		{
+			Input: struct {
+				GlueColumn types.Column
+				TableAsset qdc.Data
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: nil,
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "test qdc",
+				},
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueColumn types.Column
+				TableAsset qdc.Data
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: genStringPointer(""),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "test qdc",
+				},
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueColumn types.Column
+				TableAsset qdc.Data
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: nil,
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "",
+				},
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueColumn types.Column
+				TableAsset qdc.Data
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: genStringPointer(""),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "",
+				},
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueColumn types.Column
+				TableAsset qdc.Data
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: genStringPointer("test on console"),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "test qdc",
+				},
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueColumn types.Column
+				TableAsset qdc.Data
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: genStringPointer("test on console"),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "",
+				},
+			},
+			Expect: false,
+		},
+	}
+	for _, testCase := range testCases {
+		res := glue.ShouldColumnBeUpdated(testCase.Input.GlueColumn, testCase.Input.TableAsset)
+		if res != testCase.Expect {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}
 	}

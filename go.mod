@@ -7,7 +7,6 @@ require google.golang.org/api v0.172.0
 require (
 	cloud.google.com/go/bigquery v1.59.1
 	cloud.google.com/go/datacatalog v1.19.3
-	github.com/aws/aws-sdk-go v1.51.24
 	github.com/aws/aws-sdk-go-v2 v1.26.1
 	github.com/aws/aws-sdk-go-v2/config v1.27.11
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.11

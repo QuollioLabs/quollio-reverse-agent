@@ -8,6 +8,7 @@ import (
 	"quollio-reverse-agent/repository/glue/code"
 	"quollio-reverse-agent/repository/qdc"
 	"quollio-reverse-agent/utils"
+	"reflect"
 
 	glueService "github.com/aws/aws-sdk-go-v2/service/glue"
 	"github.com/aws/aws-sdk-go-v2/service/glue/types"
@@ -119,21 +120,16 @@ func (g *GlueConnector) ReflectDatabaseDescToAthena(dbAssets []qdc.Data) error {
 
 	for _, dbAsset := range dbAssets {
 		if glueDB, ok := mapDBAssetByDBName[dbAsset.PhysicalName]; ok {
-			if glueDB.Description == nil && dbAsset.Description != "" {
-				dbInput := types.DatabaseInput{
-					Name:        glueDB.Name,
-					Description: &dbAsset.Description,
-				}
-				var dbName string
-				if glueDB.Name != nil {
-					dbName = *glueDB.Name
-				}
-				_, err := g.GlueRepo.UpdateDatabase(dbInput, g.AthenaAccountID, dbName)
+			updateDatabaseInput := GenUpdateDatabaseInput(glueDB)
+
+			if ShouldDatabaseBeUpdated(glueDB, dbAsset) {
+				updateDatabaseInput.DatabaseInput.Description = &dbAsset.Description
+				_, err := g.GlueRepo.UpdateDatabase(updateDatabaseInput, g.AthenaAccountID)
 				if err != nil {
 					var ge *code.GlueError
 					if errors.As(err, &ge) {
 						if ge.ErrorReason == code.RESOURCE_NOT_FOUND {
-							g.Logger.Warning("Database Not Found in your AWS account. Skip to ingest the table name: %s", dbName)
+							g.Logger.Warning("Database Not Found in your AWS account. Skip to ingest the table name: %s", *updateDatabaseInput.Name)
 							continue
 						}
 					}
@@ -141,6 +137,7 @@ func (g *GlueConnector) ReflectDatabaseDescToAthena(dbAssets []qdc.Data) error {
 				}
 			}
 		}
+		// Todo: display diff after updating.
 	}
 	return nil
 }
@@ -179,28 +176,28 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 			}
 			return err
 		}
-
-		tableInput := types.TableInput{
-			Name:        glueTable.Table.Name,
-			Description: glueTable.Table.Description,
-		}
-		if glueTable.Table.Description == nil && tableAsset.Description != "" {
-			tableInput.Description = &tableAsset.Description
+		updateTableInput := GenUpdateTableInput(glueTable)
+		if ShouldTableBeUpdated(*glueTable.Table, tableAsset) {
+			updateTableInput.TableInput.Description = &tableAsset.Description
 			tableShouldBeUpdated = true
 		}
-
 		columnAssets, err := g.GetChildAssetsByParentAsset(tableAsset)
 		if err != nil {
 			return err
 		}
 		updatedColumns, columnShouldBeUpdated := GetDescUpdatedColumns(glueTable, columnAssets)
+		if columnShouldBeUpdated {
+			updateTableInput.TableInput.StorageDescriptor.Columns = updatedColumns
+		}
 		if tableShouldBeUpdated || columnShouldBeUpdated {
-			tableInput.StorageDescriptor.Columns = updatedColumns
-			_, err := g.GlueRepo.UpdateTable(g.AthenaAccountID, databaseAsset.Name, tableInput)
+			_, err = g.GlueRepo.UpdateTable(g.AthenaAccountID, databaseAsset.Name, updateTableInput)
 			if err != nil {
 				return err
 			}
+			msg := GenUpdateMessage(tableShouldBeUpdated, columnShouldBeUpdated)
+			g.Logger.Debug("Update table. msg: %s table name %s", msg, tableAsset.PhysicalName)
 		}
+		// Todo: validate table def by compare the output and previous version.
 	}
 	return nil
 }
@@ -245,13 +242,16 @@ func GetDescUpdatedColumns(glueTable *glueService.GetTableOutput, columnAssets [
 	var updatedColumns []types.Column
 	shouldBeUpdated := false
 	mapColumnAssetByColumnName := MapColumnAssetByColumnName(columnAssets)
+	if glueTable.Table.StorageDescriptor == nil {
+		return []types.Column{}, false
+	}
 	for _, column := range glueTable.Table.StorageDescriptor.Columns {
 		var columnName string
 		if column.Name != nil {
 			columnName = *column.Name
 		}
 		if columnAsset, ok := mapColumnAssetByColumnName[columnName]; ok {
-			if columnAsset.Description != "" && column.Comment == nil {
+			if ShouldColumnBeUpdated(column, columnAsset) {
 				updatedColumn := column
 				updatedColumn.Comment = &columnAsset.Description
 				updatedColumns = append(updatedColumns, updatedColumn)
@@ -306,4 +306,84 @@ func MapTableAssetByTableName(tables []types.Table) map[string]types.Table {
 		mapTableAssetByTableName[tableName] = table
 	}
 	return mapTableAssetByTableName
+}
+
+func GenUpdateMessage(tableUpdated, columnUpdated bool) string {
+	var message string
+	switch {
+	case tableUpdated && columnUpdated:
+		message = "Both table and column descriptions were updated."
+	case tableUpdated && columnUpdated == false:
+		message = "Table description was updated."
+	case tableUpdated == false && columnUpdated:
+		message = "Column descriptions were updated."
+	default: // both false
+		message = "Nothing was updated."
+	}
+	return message
+}
+
+func GenUpdateDatabaseInput(getDatabaseOutput types.Database) glueService.UpdateDatabaseInput {
+	databaseInput := types.DatabaseInput{}
+	databaseInputValueOf := reflect.ValueOf(&databaseInput).Elem()
+	databaseInputTypeOf := reflect.TypeOf(databaseInput)
+	getDatabaseOutputTypeOf := reflect.ValueOf(getDatabaseOutput)
+
+	for i := 0; i < databaseInputTypeOf.NumField(); i++ {
+		databaseInputField := databaseInputTypeOf.Field(i)
+		valueOfGetDatabaseOutput := getDatabaseOutputTypeOf.FieldByName(databaseInputField.Name)
+		if valueOfGetDatabaseOutput.IsValid() && valueOfGetDatabaseOutput.CanInterface() {
+			databaseInputFieldValue := databaseInputValueOf.Field(i)
+			databaseInputFieldValue.Set(valueOfGetDatabaseOutput)
+		}
+	}
+	updateTableInput := glueService.UpdateDatabaseInput{
+		DatabaseInput: &databaseInput,
+		Name:          databaseInput.Name,
+		CatalogId:     getDatabaseOutput.CatalogId,
+	}
+	return updateTableInput
+}
+
+func GenUpdateTableInput(getTableOutput *glueService.GetTableOutput) glueService.UpdateTableInput {
+	tableInput := types.TableInput{}
+	tableInputValueOf := reflect.ValueOf(&tableInput).Elem()
+	tableInputTypeOf := reflect.TypeOf(tableInput)
+	getTableOutputTypeOf := reflect.ValueOf(*getTableOutput.Table)
+
+	for i := 0; i < tableInputTypeOf.NumField(); i++ {
+		tableInputField := tableInputTypeOf.Field(i)
+		valueOfGetTableOutput := getTableOutputTypeOf.FieldByName(tableInputField.Name)
+		if valueOfGetTableOutput.IsValid() && valueOfGetTableOutput.CanInterface() {
+			tableInputFieldValue := tableInputValueOf.Field(i)
+			tableInputFieldValue.Set(valueOfGetTableOutput)
+		}
+	}
+	updateTableInput := glueService.UpdateTableInput{
+		CatalogId:    getTableOutput.Table.CatalogId,
+		DatabaseName: getTableOutput.Table.DatabaseName,
+		TableInput:   &tableInput,
+	}
+	return updateTableInput
+}
+
+func ShouldDatabaseBeUpdated(glueDB types.Database, dbAsset qdc.Data) bool {
+	if (glueDB.Description == nil || *glueDB.Description == "") && dbAsset.Description != "" {
+		return true
+	}
+	return false
+}
+
+func ShouldTableBeUpdated(glueTable types.Table, tableAsset qdc.Data) bool {
+	if (glueTable.Description == nil || *glueTable.Description == "") && tableAsset.Description != "" {
+		return true
+	}
+	return false
+}
+
+func ShouldColumnBeUpdated(glueColumn types.Column, columnAsset qdc.Data) bool {
+	if (glueColumn.Comment == nil || *glueColumn.Comment == "") && columnAsset.Description != "" {
+		return true
+	}
+	return false
 }
