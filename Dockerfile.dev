@@ -1,0 +1,8 @@
+FROM golang:1.21.6-alpine AS go-builder
+
+RUN apk upgrade
+RUN apk add --no-cache tzdata
+
+RUN go build -o reverse-agent .
+
+CMD ["./reverse-agent"]
