@@ -2,19 +2,19 @@
 
 ## Description (説明)
 
-This Python library collects metadata from QDIC and ingests it into data catalog corresponding to each cloud service.
+This Go library collects metadata from QDIC and ingests it into data catalog corresponding to each cloud service.
 
-このライブラリは、QDIC上のメタデータを取得し、各クラウドサービスのデータカタログに反映させます。
+このライブラリは、Quollio Data Intelligence Cloud (QDIC)上のメタデータを取得し、各クラウドサービスのデータカタログに反映させます。
 
 
 ## Prerequisite (前提条件)
 Before you begin to use this, you need to do the following.
-- Add your assets to QDC with metadata agent.
-- Issue client id and client secret on QDC for External API.
+- Add your assets to QDIC with metadata agent.
+- Issue client id and client secret on QDIC for External API.
 
 このシステムを使用する前に、以下の手順を実行する必要があります。
 - Metadata Agentを使用して、データカタログにアセットを登録する。
-- 外部API用の、データカタログ上で認証に必要なクライアントIDとシークレットを発行する。
+- 外部API用の、QDIC上で認証に必要なクライアントIDとシークレットを発行する。
 
 
 ## Development (開発)
