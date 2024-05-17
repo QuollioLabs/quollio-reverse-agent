@@ -230,14 +230,3 @@ func ConvertLocalColumnListToMap(localViewColumns []models.ViewColumn) map[strin
 	}
 	return mapViewColumns
 }
-
-func getAlterViewType(viewType int) string {
-	var alterTableTarget string
-	switch viewType {
-	case 0: // base view
-		alterTableTarget = "table"
-	default: // 1: derived view, 2: interface view, 3: materialized view
-		alterTableTarget = "view"
-	}
-	return alterTableTarget
-}
