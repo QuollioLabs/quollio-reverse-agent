@@ -2,6 +2,7 @@ package denodo
 
 import (
 	"quollio-reverse-agent/common/utils"
+	"quollio-reverse-agent/repository/denodo/rest"
 	"quollio-reverse-agent/repository/denodo/rest/models"
 	"quollio-reverse-agent/repository/qdc"
 )
@@ -14,7 +15,19 @@ func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.
 				Description:     qdcDBAsset.Description,
 				DescriptionType: localDatabase.DescriptionType,
 			}
-			d.DenodoRepo.UpdateLocalDatabases(putDatabaseInput)
+			err := d.DenodoRepo.UpdateLocalDatabases(putDatabaseInput)
+			if err != nil {
+				code, denodoErr := rest.GetErrorCode(err)
+				if denodoErr != nil {
+					return err
+				}
+				switch code {
+				case 401, 403:
+					d.Logger.Warning("Update database description failed due to the ErrorCode %v Skip update. database name: %s.", code, localDatabase.DatabaseName)
+				default:
+					return err
+				}
+			}
 			d.Logger.Debug("Update Database description database name. database name: %s", localDatabase.DatabaseName)
 		}
 	}
@@ -34,7 +47,19 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 				Description:     tableAsset.Description,
 				DescriptionType: localViewDetail.Description,
 			}
-			d.DenodoRepo.UpdateLocalViewDescription(updateLocalViewInput)
+			err = d.DenodoRepo.UpdateLocalViewDescription(updateLocalViewInput)
+			if err != nil {
+				code, denodoErr := rest.GetErrorCode(err)
+				if denodoErr != nil {
+					return err
+				}
+				switch code {
+				case 401, 403:
+					d.Logger.Warning("Update table description failed due to the ErrorCode %v Skip update. database name: %s. table name: %s", code, localViewDetail.DatabaseName, localViewDetail.Name)
+				default:
+					return err
+				}
+			}
 			d.Logger.Debug("Update table description. database name: %s. table name: %s", localViewDetail.DatabaseName, localViewDetail.Name)
 		}
 	}
@@ -58,7 +83,19 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 					FieldName:        localViewColumn.Name,
 					ViewName:         qdcTableAsset.Name,
 				}
-				d.DenodoRepo.UpdateLocalViewFieldDescription(updateLocalViewColumnInput)
+				err = d.DenodoRepo.UpdateLocalViewFieldDescription(updateLocalViewColumnInput)
+				if err != nil {
+					code, denodoErr := rest.GetErrorCode(err)
+					if denodoErr != nil {
+						return err
+					}
+					switch code {
+					case 401, 403:
+						d.Logger.Warning("Update field description failed due to the ErrorCode %v Skip update. database name: %s. table name: %s column name: %s", code, qdcDatabaseAsset.Name, qdcTableAsset.Name, localViewColumn.Name)
+					default:
+						return err
+					}
+				}
 				d.Logger.Debug("Update column description. database name: %s. table name: %s column name: %s", qdcDatabaseAsset.Name, qdcTableAsset.Name, localViewColumn.Name)
 			}
 		}

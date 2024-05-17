@@ -103,8 +103,8 @@ func (d *DenodoRepo) UpdateLocalDatabases(input models.PutDatabaseInput) error {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		// TODO Implement error handling to skip error when encountering forbidden.
-		return fmt.Errorf("UpdateLocalViewDescription failed. Code. %v", res.StatusCode)
+		err = WrapError(res)
+		return err
 	}
 
 	return nil
@@ -186,9 +186,10 @@ func (d *DenodoRepo) UpdateLocalViewDescription(input models.UpdateLocalViewInpu
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		// TODO Implement error handling to skip error when encountering forbidden.
-		return fmt.Errorf("UpdateLocalViewDescription failed. Code. %v", res.StatusCode)
+		err = WrapError(res)
+		return err
 	}
+
 	return nil
 }
 
@@ -205,8 +206,8 @@ func (d *DenodoRepo) UpdateLocalViewFieldDescription(input models.UpdateLocalVie
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		// TODO Implement error handling to skip error when encountering forbidden.
-		return fmt.Errorf("UpdateLocalViewDescription failed. Code. %v", res.StatusCode)
+		err = WrapError(res)
+		return err
 	}
 
 	return nil
