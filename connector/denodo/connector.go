@@ -124,7 +124,7 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog() error {
 		d.Logger.Error("Failed to GetAllDenodoRootAssets: %s", err.Error())
 		return err
 	}
-	vdpDatabases, err := d.GetDatabasesFromVdp()
+	vdpDatabases, err := d.DenodoDBClient.GetDatabasesFromVdp()
 	if err != nil {
 		return err
 	}
@@ -181,7 +181,7 @@ func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog() error 
 	for _, localDatabase := range localDatabases {
 		err = d.ReflectLocalDatabaseDescToDenodo(localDatabase, qdcDatabaseAssetMap)
 		if err != nil {
-			d.Logger.Error("Failed to ReflectVdpDatabaseDescToDenodo: %s", err.Error())
+			d.Logger.Error("Failed to ReflectLocalDatabaseDescToDenodo: %s", err.Error())
 			return err
 		}
 	}

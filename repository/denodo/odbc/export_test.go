@@ -1,3 +1,3 @@
-package denodo
+package odbc
 
 var GetAlterViewType = getAlterViewType

@@ -3,14 +3,14 @@ package denodo
 import (
 	"fmt"
 	"quollio-reverse-agent/common/utils"
-	dm "quollio-reverse-agent/models/denodo"
+	"quollio-reverse-agent/repository/denodo/odbc/models"
 	"quollio-reverse-agent/repository/qdc"
 )
 
-func (d *DenodoConnector) ReflectVdpDatabaseDescToDenodo(getDatabaseResult dm.GetDatabasesResult, dbAssets map[string]qdc.Data) error {
+func (d *DenodoConnector) ReflectVdpDatabaseDescToDenodo(getDatabaseResult models.GetDatabasesResult, dbAssets map[string]qdc.Data) error {
 	if qdcDBAsset, ok := dbAssets[getDatabaseResult.DatabaseName]; ok {
 		if !getDatabaseResult.Description.Valid && qdcDBAsset.Description != "" {
-			err := d.UpdateVdpDatabaseDesc(getDatabaseResult.DatabaseName, qdcDBAsset.Description)
+			err := d.DenodoDBClient.UpdateVdpDatabaseDesc(getDatabaseResult.DatabaseName, qdcDBAsset.Description)
 			if err != nil {
 				return fmt.Errorf("ReflectVdpDatabaseDescToDenodo failed %s", err.Error())
 			}
@@ -23,7 +23,7 @@ func (d *DenodoConnector) ReflectVdpDatabaseDescToDenodo(getDatabaseResult dm.Ge
 func (d *DenodoConnector) ReflectVdpTableAttributeToDenodo(qdcTableAssets map[string]qdc.Data) error {
 	for _, qdcTableAsset := range qdcTableAssets {
 		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(qdcTableAsset, "schema3")
-		vdpTableAsset, err := d.GetViewFromVdp(qdcDatabaseAsset.Name, qdcTableAsset.PhysicalName)
+		vdpTableAsset, err := d.DenodoDBClient.GetViewFromVdp(qdcDatabaseAsset.Name, qdcTableAsset.PhysicalName)
 		if err != nil {
 			return err
 		}
@@ -33,7 +33,7 @@ func (d *DenodoConnector) ReflectVdpTableAttributeToDenodo(qdcTableAssets map[st
 		}
 
 		if !vdpTableAsset[0].Description.Valid && qdcTableAsset.Description != "" {
-			err := d.UpdateVdpTableDesc(vdpTableAsset[0], qdcTableAsset.Description)
+			err := d.DenodoDBClient.UpdateVdpTableDesc(vdpTableAsset[0], qdcTableAsset.Description)
 			if err != nil {
 				return fmt.Errorf("ReflectVdpTableAttributeToDenodo failed %s", err.Error())
 			}
@@ -47,7 +47,7 @@ func (d *DenodoConnector) ReflectVdpColumnAttributeToDenodo(qdcColumnAssets map[
 	for _, qdcColumnAsset := range qdcColumnAssets {
 		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(qdcColumnAsset, "schema3")
 		qdcTableAsset := utils.GetSpecifiedAssetFromPath(qdcColumnAsset, "table")
-		vdpColumnAsset, err := d.GetViewColumnsFromVdp(qdcDatabaseAsset.Name, qdcTableAsset.Name)
+		vdpColumnAsset, err := d.DenodoDBClient.GetViewColumnsFromVdp(qdcDatabaseAsset.Name, qdcTableAsset.Name)
 		if err != nil {
 			return err
 		}
@@ -57,7 +57,7 @@ func (d *DenodoConnector) ReflectVdpColumnAttributeToDenodo(qdcColumnAssets map[
 		}
 
 		if !vdpColumnAsset[0].ColumnRemarks.Valid && qdcColumnAsset.Description != "" {
-			err := d.UpdateVdpTableColumnDesc(vdpColumnAsset[0], qdcColumnAsset.Description)
+			err := d.DenodoDBClient.UpdateVdpTableColumnDesc(vdpColumnAsset[0], qdcColumnAsset.Description)
 			if err != nil {
 				return fmt.Errorf("UpdateVdpTableColumnDesc failed %s", err.Error())
 			}

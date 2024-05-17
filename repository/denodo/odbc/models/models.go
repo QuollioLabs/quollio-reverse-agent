@@ -1,4 +1,4 @@
-package denodo
+package models
 
 import "database/sql"
 
