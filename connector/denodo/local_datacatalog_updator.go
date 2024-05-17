@@ -2,14 +2,14 @@ package denodo
 
 import (
 	"quollio-reverse-agent/common/utils"
-	"quollio-reverse-agent/repository/denodo/rest"
+	"quollio-reverse-agent/repository/denodo/rest/models"
 	"quollio-reverse-agent/repository/qdc"
 )
 
-func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase rest.Database, dbAssets map[string]qdc.Data) error {
+func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.Database, dbAssets map[string]qdc.Data) error {
 	if qdcDBAsset, ok := dbAssets[localDatabase.DatabaseName]; ok {
 		if localDatabase.DatabaseDescription != "" && qdcDBAsset.Description != "" {
-			putDatabaseInput := rest.PutDatabaseInput{
+			putDatabaseInput := models.PutDatabaseInput{
 				DatabaseID:      localDatabase.DatabaseId,
 				Description:     qdcDBAsset.Description,
 				DescriptionType: localDatabase.DescriptionType,
@@ -29,7 +29,7 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 			return err
 		}
 		if localViewDetail.Description == "" && tableAsset.Description != "" {
-			updateLocalViewInput := rest.UpdateLocalViewInput{
+			updateLocalViewInput := models.UpdateLocalViewInput{
 				ID:              localViewDetail.Id,
 				Description:     tableAsset.Description,
 				DescriptionType: localViewDetail.Description,
@@ -52,7 +52,7 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 		localViewColumnMap := ConvertLocalColumnListToMap(localViewColumns)
 		if localViewColumn, ok := localViewColumnMap[columnAssetName]; ok {
 			if localViewColumn.Description == "" && columnAsset.Description != "" {
-				updateLocalViewColumnInput := rest.UpdateLocalViewFieldInput{
+				updateLocalViewColumnInput := models.UpdateLocalViewFieldInput{
 					DatabaseName:     qdcDatabaseAsset.Name,
 					FieldDescription: columnAsset.Description,
 					FieldName:        localViewColumn.Name,

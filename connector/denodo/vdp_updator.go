@@ -6,7 +6,6 @@ import (
 	"quollio-reverse-agent/repository/qdc"
 )
 
-
 func (d *DenodoConnector) ReflectVdpDatabaseDescToDenodo(getDatabaseResult dm.GetDatabasesResult, dbAssets map[string]qdc.Data) error {
 	if qdcDBAsset, ok := dbAssets[getDatabaseResult.DatabaseName]; ok {
 		if !getDatabaseResult.Description.Valid && qdcDBAsset.Description != "" {

@@ -6,9 +6,9 @@ import (
 
 	"quollio-reverse-agent/common/logger"
 	"quollio-reverse-agent/common/utils"
-	"quollio-reverse-agent/repository/denodo/model"
 	"quollio-reverse-agent/repository/denodo/odbc"
 	"quollio-reverse-agent/repository/denodo/rest"
+	"quollio-reverse-agent/repository/denodo/rest/models"
 	"quollio-reverse-agent/repository/qdc"
 )
 
@@ -223,8 +223,8 @@ func ConvertQdcAssetListToMap(qdcAssetList []qdc.Data) map[string]qdc.Data {
 	return mapQDCAsset
 }
 
-func ConvertLocalColumnListToMap(localViewColumns []model.ViewColumn) map[string]model.ViewColumn {
-	mapViewColumns := make(map[string]model.ViewColumn)
+func ConvertLocalColumnListToMap(localViewColumns []models.ViewColumn) map[string]models.ViewColumn {
+	mapViewColumns := make(map[string]models.ViewColumn)
 	for _, localViewColumn := range localViewColumns {
 		mapViewColumns[localViewColumn.Name] = localViewColumn
 	}
