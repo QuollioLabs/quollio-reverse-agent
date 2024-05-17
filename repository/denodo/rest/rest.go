@@ -32,25 +32,6 @@ func NewDenodoRepo(clientID, clientSecret, baseURL string) *DenodoRepo {
 	return &repo
 }
 
-func (d *DenodoRepo) postRequest(url string, data []byte) (*http.Response, error) {
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
-	if err != nil {
-		return nil, fmt.Errorf("Request failed with status: %s", err.Error())
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Basic "+d.UserPath)
-
-	resp, err := d.HttpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("POST Request failed with status: %v\n", resp.Status)
-	}
-	return resp, nil
-}
-
 func (d *DenodoRepo) SendRequest(reqType, url string, data []byte) (*http.Response, error) {
 	req, err := http.NewRequest(reqType, url, bytes.NewBuffer(data))
 	if err != nil {

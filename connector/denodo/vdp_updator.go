@@ -1,6 +1,7 @@
 package denodo
 
 import (
+	"fmt"
 	"quollio-reverse-agent/common/utils"
 	dm "quollio-reverse-agent/models/denodo"
 	"quollio-reverse-agent/repository/qdc"
@@ -9,7 +10,10 @@ import (
 func (d *DenodoConnector) ReflectVdpDatabaseDescToDenodo(getDatabaseResult dm.GetDatabasesResult, dbAssets map[string]qdc.Data) error {
 	if qdcDBAsset, ok := dbAssets[getDatabaseResult.DatabaseName]; ok {
 		if !getDatabaseResult.Description.Valid && qdcDBAsset.Description != "" {
-			d.UpdateVdpDatabaseDesc(getDatabaseResult.DatabaseName, qdcDBAsset.Description)
+			err := d.UpdateVdpDatabaseDesc(getDatabaseResult.DatabaseName, qdcDBAsset.Description)
+			if err != nil {
+				return fmt.Errorf("ReflectVdpDatabaseDescToDenodo failed %s", err.Error())
+			}
 			d.Logger.Debug("Update Database description database name. database name: %s", getDatabaseResult.DatabaseName)
 		}
 	}
@@ -29,7 +33,10 @@ func (d *DenodoConnector) ReflectVdpTableAttributeToDenodo(qdcTableAssets map[st
 		}
 
 		if !vdpTableAsset[0].Description.Valid && qdcTableAsset.Description != "" {
-			d.UpdateVdpTableDesc(vdpTableAsset[0], qdcTableAsset.Description)
+			err := d.UpdateVdpTableDesc(vdpTableAsset[0], qdcTableAsset.Description)
+			if err != nil {
+				return fmt.Errorf("ReflectVdpTableAttributeToDenodo failed %s", err.Error())
+			}
 			d.Logger.Debug("Update table description. database name: %s. table name: %s", vdpTableAsset[0].DatabaseName, vdpTableAsset[0].ViewName)
 		}
 	}
@@ -50,7 +57,10 @@ func (d *DenodoConnector) ReflectVdpColumnAttributeToDenodo(qdcColumnAssets map[
 		}
 
 		if !vdpColumnAsset[0].ColumnRemarks.Valid && qdcColumnAsset.Description != "" {
-			d.UpdateVdpTableColumnDesc(vdpColumnAsset[0], qdcColumnAsset.Description)
+			err := d.UpdateVdpTableColumnDesc(vdpColumnAsset[0], qdcColumnAsset.Description)
+			if err != nil {
+				return fmt.Errorf("UpdateVdpTableColumnDesc failed %s", err.Error())
+			}
 			d.Logger.Debug(
 				"Update column description. database name: %s. table name: %s. column name: %s", vdpColumnAsset[0].DatabaseName, vdpColumnAsset[0].ViewName, vdpColumnAsset[0].ColumnName,
 			)
