@@ -119,8 +119,8 @@ func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase rest.Da
 	if qdcDBAsset, ok := dbAssets[localDatabase.DatabaseName]; ok {
 		if localDatabase.DatabaseDescription != "" && qdcDBAsset.Description != "" {
 			putDatabaseInput := rest.PutDatabaseInput{
-				DatabaseID: localDatabase.DatabaseId,
-				Description: qdcDBAsset.Description,
+				DatabaseID:      localDatabase.DatabaseId,
+				Description:     qdcDBAsset.Description,
 				DescriptionType: localDatabase.DescriptionType,
 			}
 			d.DenodoRepo.UpdateLocalDatabases(putDatabaseInput)
@@ -159,8 +159,8 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 		}
 		if localViewDetail.Description == "" && tableAsset.Description != "" {
 			updateLocalViewInput := rest.UpdateLocalViewInput{
-				ID: localViewDetail.Id,
-				Description: tableAsset.Description,
+				ID:              localViewDetail.Id,
+				Description:     tableAsset.Description,
 				DescriptionType: localViewDetail.Description,
 			}
 			d.DenodoRepo.UpdateLocalViewDescription(updateLocalViewInput)
@@ -205,10 +205,10 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 		if localViewColumn, ok := localViewColumnMap[columnAssetName]; ok {
 			if localViewColumn.Description == "" && columnAsset.Description != "" {
 				updateLocalViewColumnInput := rest.UpdateLocalViewFieldInput{
-					DatabaseName: qdcDatabaseAsset.Name,
+					DatabaseName:     qdcDatabaseAsset.Name,
 					FieldDescription: columnAsset.Description,
-					FieldName: localViewColumn.Name,
-					ViewName: qdcTableAsset.Name,
+					FieldName:        localViewColumn.Name,
+					ViewName:         qdcTableAsset.Name,
 				}
 				d.DenodoRepo.UpdateLocalViewFieldDescription(updateLocalViewColumnInput)
 				d.Logger.Debug("Update column description. database name: %s. table name: %s column name: %s", qdcDatabaseAsset.Name, qdcTableAsset.Name, localViewColumn.Name)

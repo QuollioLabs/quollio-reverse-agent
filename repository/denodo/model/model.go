@@ -139,18 +139,17 @@ type ViewDetail struct {
 	HasRequests        bool               `json:"hasRequests"`
 }
 
-
 type ViewColumn struct {
-	Name           string      `json:"name"`
-	LogicalName    interface{} `json:"logicalName"`
-	Type           string      `json:"type"`
-	Description    string      `json:"description"`
+	Name            string      `json:"name"`
+	LogicalName     interface{} `json:"logicalName"`
+	Type            string      `json:"type"`
+	Description     string      `json:"description"`
 	DescriptionType interface{} `json:"descriptionType"`
-	InLocal        bool        `json:"inLocal"`
-	Tags           interface{} `json:"tags"`
-	PrimaryKey     bool        `json:"primaryKey"`
-	Nullable       bool        `json:"nullable"`
-	SourceType     string      `json:"sourceType"`
-	TypeSize       int         `json:"typeSize"`
-	TypeDecimal    int         `json:"typeDecimal"`
+	InLocal         bool        `json:"inLocal"`
+	Tags            interface{} `json:"tags"`
+	PrimaryKey      bool        `json:"primaryKey"`
+	Nullable        bool        `json:"nullable"`
+	SourceType      string      `json:"sourceType"`
+	TypeSize        int         `json:"typeSize"`
+	TypeDecimal     int         `json:"typeDecimal"`
 }
