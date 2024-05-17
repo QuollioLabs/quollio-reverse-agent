@@ -107,7 +107,7 @@ func (d *DenodoConnector) GetAllChildAssetsByID(parentAssets []qdc.Data) ([]qdc.
 
 func (d *DenodoConnector) ReflectVdpDatabaseDescToDenodo(getDatabaseResult dm.GetDatabasesResult, dbAssets map[string]qdc.Data) error {
 	if qdcDBAsset, ok := dbAssets[getDatabaseResult.DatabaseName]; ok {
-		if (!getDatabaseResult.Description.Valid) && qdcDBAsset.Description != "" {
+		if !getDatabaseResult.Description.Valid && qdcDBAsset.Description != "" {
 			d.UpdateVdpDatabaseDesc(getDatabaseResult.DatabaseName, qdcDBAsset.Description)
 			d.Logger.Debug("Update Database description database name. database name: %s", getDatabaseResult.DatabaseName)
 		}
@@ -130,69 +130,64 @@ func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase rest.Da
 	return nil
 }
 
-func (d *DenodoConnector) ReflectTableAttributeToDenodo(tableAssets map[string]qdc.Data) error {
-	for tableAssetName, tableAsset := range tableAssets {
-		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(tableAsset, "schema3")
-		vdpTableAsset, err := d.GetViewFromVdp(qdcDatabaseAsset.Name, tableAssetName)
+func (d *DenodoConnector) ReflectVdpTableAttributeToDenodo(qdcTableAssets map[string]qdc.Data) error {
+	for _, qdcTableAsset := range qdcTableAssets {
+		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(qdcTableAsset, "schema3")
+		vdpTableAsset, err := d.GetViewFromVdp(qdcDatabaseAsset.Name, qdcTableAsset.PhysicalName)
 		if err != nil {
 			return err
 		}
 		if len(vdpTableAsset) == 0 {
+			d.Logger.Debug("Skip ReflectVdpTableAttributeToDenodo. database name: %s. table name: %s", qdcDatabaseAsset.Name, qdcTableAsset.PhysicalName)
 			continue
 		}
 
-		if qdcTableAsset, ok := tableAssets[vdpTableAsset[0].ViewName]; ok {
-			if !vdpTableAsset[0].Description.Valid && qdcTableAsset.Description != "" {
-				d.UpdateVdpTableDesc(vdpTableAsset[0], qdcTableAsset.Description)
-				d.Logger.Debug("Update table description. database name: %s. table name: %s", vdpTableAsset[0].DatabaseName, vdpTableAsset[0].ViewName)
-			}
+		if !vdpTableAsset[0].Description.Valid && qdcTableAsset.Description != "" {
+			d.UpdateVdpTableDesc(vdpTableAsset[0], qdcTableAsset.Description)
+			d.Logger.Debug("Update table description. database name: %s. table name: %s", vdpTableAsset[0].DatabaseName, vdpTableAsset[0].ViewName)
 		}
 	}
 	return nil
 }
 
 func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[string]qdc.Data) error {
-	for tableAssetName, tableAsset := range tableAssets {
+	for _, tableAsset := range tableAssets {
 		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(tableAsset, "schema3")
-		localViewDetail, err := d.DenodoRepo.GetViewDetails(qdcDatabaseAsset.Name, tableAssetName)
+		localViewDetail, err := d.DenodoRepo.GetViewDetails(qdcDatabaseAsset.Name, tableAsset.PhysicalName)
 		if err != nil {
 			return err
 		}
-
-		if qdcTableAsset, ok := tableAssets[localViewDetail.Name]; ok {
-			if localViewDetail.Description == "" && qdcTableAsset.Description != "" {
-				updateLocalViewInput := rest.UpdateLocalViewInput{
-					ID: localViewDetail.Id,
-					Description: qdcTableAsset.Description,
-					DescriptionType: localViewDetail.Description,
-				}
-				d.DenodoRepo.UpdateLocalViewDescription(updateLocalViewInput)
-				d.Logger.Debug("Update table description. database name: %s. table name: %s", localViewDetail.DatabaseName, localViewDetail.Name)
+		if localViewDetail.Description == "" && tableAsset.Description != "" {
+			updateLocalViewInput := rest.UpdateLocalViewInput{
+				ID: localViewDetail.Id,
+				Description: tableAsset.Description,
+				DescriptionType: localViewDetail.Description,
 			}
+			d.DenodoRepo.UpdateLocalViewDescription(updateLocalViewInput)
+			d.Logger.Debug("Update table description. database name: %s. table name: %s", localViewDetail.DatabaseName, localViewDetail.Name)
 		}
 	}
 	return nil
 }
 
-func (d *DenodoConnector) ReflectColumnAttributeToDenodo(columnAssets map[string]qdc.Data) error {
-	for _, columnAsset := range columnAssets {
-		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(columnAsset, "schema3")
-		qdcTableAsset := utils.GetSpecifiedAssetFromPath(columnAsset, "table")
+func (d *DenodoConnector) ReflectVdpColumnAttributeToDenodo(qdcColumnAssets map[string]qdc.Data) error {
+	for _, qdcColumnAsset := range qdcColumnAssets {
+		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(qdcColumnAsset, "schema3")
+		qdcTableAsset := utils.GetSpecifiedAssetFromPath(qdcColumnAsset, "table")
 		vdpColumnAsset, err := d.GetViewColumnsFromVdp(qdcDatabaseAsset.Name, qdcTableAsset.Name)
 		if err != nil {
 			return err
 		}
 		if len(vdpColumnAsset) == 0 {
+			d.Logger.Debug("Skip ReflectVdpColumnAttributeToDenodo. database name: %s. table name: %s. column name: %s", qdcDatabaseAsset.Name, qdcTableAsset.Name, qdcColumnAsset.PhysicalName)
 			continue
 		}
 
-		if qdcColumnAsset, ok := columnAssets[vdpColumnAsset[0].ColumnName]; ok {
-			if (!vdpColumnAsset[0].ColumnRemarks.Valid) && qdcColumnAsset.Description != "" {
-				d.UpdateVdpTableColumnDesc(vdpColumnAsset[0], qdcColumnAsset.Description)
-				d.Logger.Debug(
-					"Update column description. database name: %s. table name: %s. column name: %s", vdpColumnAsset[0].DatabaseName, vdpColumnAsset[0].ViewName, vdpColumnAsset[0].ColumnName,
-				)
-			}
+		if !vdpColumnAsset[0].ColumnRemarks.Valid && qdcColumnAsset.Description != "" {
+			d.UpdateVdpTableColumnDesc(vdpColumnAsset[0], qdcColumnAsset.Description)
+			d.Logger.Debug(
+				"Update column description. database name: %s. table name: %s. column name: %s", vdpColumnAsset[0].DatabaseName, vdpColumnAsset[0].ViewName, vdpColumnAsset[0].ColumnName,
+			)
 		}
 	}
 	return nil
@@ -263,9 +258,9 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog() error {
 		return err
 	}
 	qdcTableAssetMap := ConvertQdcAssetListToMap(tableAssets)
-	err = d.ReflectTableAttributeToDenodo(qdcTableAssetMap)
+	err = d.ReflectVdpTableAttributeToDenodo(qdcTableAssetMap)
 	if err != nil {
-		d.Logger.Error("Failed to ReflectTableAttributeToDenodo: %s", err.Error())
+		d.Logger.Error("Failed to ReflectVdpTableAttributeToDenodo: %s", err.Error())
 		return err
 	}
 
@@ -276,9 +271,9 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog() error {
 		return err
 	}
 	qdcColumnAssetMap := ConvertQdcAssetListToMap(columnAssets)
-	err = d.ReflectColumnAttributeToDenodo(qdcColumnAssetMap)
+	err = d.ReflectVdpColumnAttributeToDenodo(qdcColumnAssetMap)
 	if err != nil {
-		d.Logger.Error("Failed to ReflectColumnAttributeToDenodo: %s", err.Error())
+		d.Logger.Error("Failed to ReflectVdpColumnAttributeToDenodo: %s", err.Error())
 		return err
 	}
 
@@ -314,7 +309,7 @@ func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog() error 
 	qdcTableAssetMap := ConvertQdcAssetListToMap(tableAssets)
 	err = d.ReflectLocalTableAttributeToDenodo(qdcTableAssetMap)
 	if err != nil {
-		d.Logger.Error("Failed to ReflectTableAttributeToDenodo: %s", err.Error())
+		d.Logger.Error("Failed to ReflectLocalTableAttributeToDenodo: %s", err.Error())
 		return err
 	}
 
@@ -327,7 +322,7 @@ func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog() error 
 	qdcColumnAssetMap := ConvertQdcAssetListToMap(columnAssets)
 	err = d.ReflectLocalColumnAttributeToDenodo(qdcColumnAssetMap)
 	if err != nil {
-		d.Logger.Error("Failed to ReflectColumnAttributeToDenodo: %s", err.Error())
+		d.Logger.Error("Failed to ReflectLocalColumnAttributeToDenodo: %s", err.Error())
 		return err
 	}
 
