@@ -7,14 +7,15 @@ import (
 	"quollio-reverse-agent/common/logger"
 	"quollio-reverse-agent/common/utils"
 	dm "quollio-reverse-agent/models/denodo"
-	"quollio-reverse-agent/repository/denodo"
+	"quollio-reverse-agent/repository/denodo/model"
 	"quollio-reverse-agent/repository/denodo/odbc"
+	"quollio-reverse-agent/repository/denodo/rest"
 	"quollio-reverse-agent/repository/qdc"
 )
 
 type DenodoConnector struct {
 	QDCExternalAPIClient qdc.QDCExternalAPI
-	DenodoRepo           denodo.DenodoRepo
+	DenodoRepo           rest.DenodoRepo
 	DenodoDBClient       *odbc.Client
 	Logger               *logger.BuiltinLogger
 }
@@ -41,7 +42,7 @@ func NewDenodoConnector(logger *logger.BuiltinLogger) (DenodoConnector, error) {
 		return DenodoConnector{}, err
 	}
 
-	denodoRepo := denodo.NewDenodoRepo(denodoClientID, denodoClientSecret, denodoBaseURL)
+	denodoRepo := rest.NewDenodoRepo(denodoClientID, denodoClientSecret, denodoBaseURL)
 	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret)
 	connector := DenodoConnector{
 		QDCExternalAPIClient: externalAPI,
@@ -114,6 +115,21 @@ func (d *DenodoConnector) ReflectVdpDatabaseDescToDenodo(getDatabaseResult dm.Ge
 	return nil
 }
 
+func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase rest.Database, dbAssets map[string]qdc.Data) error {
+	if qdcDBAsset, ok := dbAssets[localDatabase.DatabaseName]; ok {
+		if localDatabase.DatabaseDescription != "" && qdcDBAsset.Description != "" {
+			putDatabaseInput := rest.PutDatabaseInput{
+				DatabaseID: localDatabase.DatabaseId,
+				Description: qdcDBAsset.Description,
+				DescriptionType: localDatabase.DescriptionType,
+			}
+			d.DenodoRepo.UpdateLocalDatabases(putDatabaseInput)
+			d.Logger.Debug("Update Database description database name. database name: %s", localDatabase.DatabaseName)
+		}
+	}
+	return nil
+}
+
 func (d *DenodoConnector) ReflectTableAttributeToDenodo(tableAssets map[string]qdc.Data) error {
 	for tableAssetName, tableAsset := range tableAssets {
 		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(tableAsset, "schema3")
@@ -126,9 +142,32 @@ func (d *DenodoConnector) ReflectTableAttributeToDenodo(tableAssets map[string]q
 		}
 
 		if qdcTableAsset, ok := tableAssets[vdpTableAsset[0].ViewName]; ok {
-			if (!vdpTableAsset[0].Description.Valid) && qdcTableAsset.Description != "" {
+			if !vdpTableAsset[0].Description.Valid && qdcTableAsset.Description != "" {
 				d.UpdateVdpTableDesc(vdpTableAsset[0], qdcTableAsset.Description)
 				d.Logger.Debug("Update table description. database name: %s. table name: %s", vdpTableAsset[0].DatabaseName, vdpTableAsset[0].ViewName)
+			}
+		}
+	}
+	return nil
+}
+
+func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[string]qdc.Data) error {
+	for tableAssetName, tableAsset := range tableAssets {
+		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(tableAsset, "schema3")
+		localViewDetail, err := d.DenodoRepo.GetViewDetails(qdcDatabaseAsset.Name, tableAssetName)
+		if err != nil {
+			return err
+		}
+
+		if qdcTableAsset, ok := tableAssets[localViewDetail.Name]; ok {
+			if localViewDetail.Description == "" && qdcTableAsset.Description != "" {
+				updateLocalViewInput := rest.UpdateLocalViewInput{
+					ID: localViewDetail.Id,
+					Description: qdcTableAsset.Description,
+					DescriptionType: localViewDetail.Description,
+				}
+				d.DenodoRepo.UpdateLocalViewDescription(updateLocalViewInput)
+				d.Logger.Debug("Update table description. database name: %s. table name: %s", localViewDetail.DatabaseName, localViewDetail.Name)
 			}
 		}
 	}
@@ -159,7 +198,45 @@ func (d *DenodoConnector) ReflectColumnAttributeToDenodo(columnAssets map[string
 	return nil
 }
 
+func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[string]qdc.Data) error {
+	for columnAssetName, columnAsset := range columnAssets {
+		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(columnAsset, "schema3")
+		qdcTableAsset := utils.GetSpecifiedAssetFromPath(columnAsset, "table")
+		localViewColumns, err := d.DenodoRepo.GetViewColumns(qdcDatabaseAsset.Name, qdcTableAsset.Name)
+		if err != nil {
+			return err
+		}
+		localViewColumnMap := ConvertLocalColumnListToMap(localViewColumns)
+		if localViewColumn, ok := localViewColumnMap[columnAssetName]; ok {
+			if localViewColumn.Description == "" && columnAsset.Description != "" {
+				updateLocalViewColumnInput := rest.UpdateLocalViewFieldInput{
+					DatabaseName: qdcDatabaseAsset.Name,
+					FieldDescription: columnAsset.Description,
+					FieldName: localViewColumn.Name,
+					ViewName: qdcTableAsset.Name,
+				}
+				d.DenodoRepo.UpdateLocalViewFieldDescription(updateLocalViewColumnInput)
+				d.Logger.Debug("Update column description. database name: %s. table name: %s column name: %s", qdcDatabaseAsset.Name, qdcTableAsset.Name, localViewColumn.Name)
+			}
+		}
+	}
+	return nil
+}
+
 func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
+	err := d.ReflectVdpMetadataToDataCatalog()
+	if err != nil {
+		return err
+	}
+
+	err = d.ReflectDenodoDataCatalogMetadataToDataCatalog()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog() error {
 	d.Logger.Info("List Denodo database assets")
 	rootAssets, err := d.GetAllDenodoRootAssets()
 	if err != nil {
@@ -208,12 +285,69 @@ func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 	return nil
 }
 
+func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog() error {
+	d.Logger.Info("List Denodo database assets")
+	rootAssets, err := d.GetAllDenodoRootAssets()
+	if err != nil {
+		d.Logger.Error("Failed to GetAllDenodoRootAssets: %s", err.Error())
+		return err
+	}
+	localDatabases, err := d.DenodoRepo.GetLocalDatabases()
+	if err != nil {
+		return err
+	}
+	qdcDatabaseAssetMap := ConvertQdcAssetListToMap(rootAssets)
+	for _, localDatabase := range localDatabases {
+		err = d.ReflectLocalDatabaseDescToDenodo(localDatabase, qdcDatabaseAssetMap)
+		if err != nil {
+			d.Logger.Error("Failed to ReflectVdpDatabaseDescToDenodo: %s", err.Error())
+			return err
+		}
+	}
+
+	d.Logger.Info("List Denodo table assets")
+	tableAssets, err := d.GetAllChildAssetsByID(rootAssets)
+	if err != nil {
+		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
+		return err
+	}
+	qdcTableAssetMap := ConvertQdcAssetListToMap(tableAssets)
+	err = d.ReflectLocalTableAttributeToDenodo(qdcTableAssetMap)
+	if err != nil {
+		d.Logger.Error("Failed to ReflectTableAttributeToDenodo: %s", err.Error())
+		return err
+	}
+
+	d.Logger.Info("List Denodo column assets")
+	columnAssets, err := d.GetAllChildAssetsByID(tableAssets)
+	if err != nil {
+		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
+		return err
+	}
+	qdcColumnAssetMap := ConvertQdcAssetListToMap(columnAssets)
+	err = d.ReflectLocalColumnAttributeToDenodo(qdcColumnAssetMap)
+	if err != nil {
+		d.Logger.Error("Failed to ReflectColumnAttributeToDenodo: %s", err.Error())
+		return err
+	}
+
+	return nil
+}
+
 func ConvertQdcAssetListToMap(qdcAssetList []qdc.Data) map[string]qdc.Data {
 	mapQDCAsset := make(map[string]qdc.Data)
 	for _, qdcAsset := range qdcAssetList {
 		mapQDCAsset[qdcAsset.PhysicalName] = qdcAsset
 	}
 	return mapQDCAsset
+}
+
+func ConvertLocalColumnListToMap(localViewColumns []model.ViewColumn) map[string]model.ViewColumn {
+	mapViewColumns := make(map[string]model.ViewColumn)
+	for _, localViewColumn := range localViewColumns {
+		mapViewColumns[localViewColumn.Name] = localViewColumn
+	}
+	return mapViewColumns
 }
 
 func getAlterViewType(viewType int) string {
