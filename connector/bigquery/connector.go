@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 	"quollio-reverse-agent/common/logger"
-	"quollio-reverse-agent/common/utils"
 	"quollio-reverse-agent/repository/bigquery"
 	"quollio-reverse-agent/repository/dataplex"
 	"quollio-reverse-agent/repository/qdc"
+	"quollio-reverse-agent/utils"
 
 	bq "cloud.google.com/go/bigquery"
 )

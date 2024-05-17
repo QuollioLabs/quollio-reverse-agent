@@ -6,11 +6,9 @@ import (
 	"os"
 	"quollio-reverse-agent/common/logger"
 	"quollio-reverse-agent/connector/bigquery"
-<<<<<<< HEAD
+
 	"quollio-reverse-agent/connector/denodo"
 	"quollio-reverse-agent/connector/glue"
-=======
->>>>>>> 530cb55e4a0e681a50d3e0076b14fc44107bda58
 
 	"github.com/joho/godotenv"
 )

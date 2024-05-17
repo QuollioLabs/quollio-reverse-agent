@@ -150,9 +150,7 @@ func (g GlueConnector) GetAllDatabases() ([]types.Database, error) {
 		if err != nil {
 			return []types.Database{}, err
 		}
-		for _, db := range dbOutput.DatabaseList {
-			glueDatabases = append(glueDatabases, db)
-		}
+		glueDatabases = append(glueDatabases, dbOutput.DatabaseList...)
 		if dbOutput.NextToken == nil {
 			return glueDatabases, err
 		}
@@ -313,9 +311,9 @@ func GenUpdateMessage(tableUpdated, columnUpdated bool) string {
 	switch {
 	case tableUpdated && columnUpdated:
 		message = "Both table and column descriptions were updated."
-	case tableUpdated && columnUpdated == false:
+	case tableUpdated && !columnUpdated:
 		message = "Table description was updated."
-	case tableUpdated == false && columnUpdated:
+	case !tableUpdated && columnUpdated:
 		message = "Column descriptions were updated."
 	default: // both false
 		message = "Nothing was updated."
