@@ -3,6 +3,7 @@ package odbc
 import (
 	"fmt"
 	"quollio-reverse-agent/repository/denodo/odbc/models"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -128,7 +129,7 @@ func (c *Client) GetViewColumnsFromVdp(databaseName, viewName string) ([]models.
 func (c *Client) UpdateVdpDatabaseDesc(databaseName, description string) error {
 	alterStatement := fmt.Sprintf(`
 	                    alter database %s 
-	                    description = '%s'`, databaseName, description)
+	                    description = '%s'`, databaseName, escapeSingleQuoteInString(description))
 
 	err := c.ExecuteQuery(alterStatement)
 	if err != nil {
@@ -143,7 +144,7 @@ func (c *Client) UpdateVdpTableDesc(getViewResult models.GetViewsResult, descrip
 	                               description = '%s'`,
 		alterTableTarget,
 		getViewResult.ViewName,
-		description,
+		escapeSingleQuoteInString(description),
 	)
 	err := c.ExecuteQuery(alterStatement)
 	if err != nil {
@@ -159,7 +160,7 @@ func (c *Client) UpdateVdpTableColumnDesc(getViewColumnResult models.GetViewColu
 		alterTableTarget,
 		getViewColumnResult.ViewName,
 		getViewColumnResult.ColumnName,
-		description,
+		escapeSingleQuoteInString(description),
 	)
 	err := c.ExecuteQuery(alterStatement)
 	if err != nil {
@@ -177,4 +178,8 @@ func getAlterViewType(viewType int) string {
 		alterTableTarget = "view"
 	}
 	return alterTableTarget
+}
+
+func escapeSingleQuoteInString(input string) string {
+	return strings.ReplaceAll(input, "'", "''")
 }
