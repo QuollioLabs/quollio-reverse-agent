@@ -54,14 +54,6 @@ func (c *Client) ExecuteQuery(sqlStmt string) error {
 	return nil
 }
 
-func (c *Client) GetQueryResults(target interface{}, query string, args ...interface{}) error {
-	err := c.Conn.Select(target, query, args...)
-	if err != nil {
-		return fmt.Errorf("GetQueryResults failed %s", err.Error())
-	}
-	return nil
-}
-
 func (c *Client) GetDatabasesFromVdp() (*[]models.GetDatabasesResult, error) {
 	dbQuery := `select
 	              db_name
@@ -70,7 +62,7 @@ func (c *Client) GetDatabasesFromVdp() (*[]models.GetDatabasesResult, error) {
 				  get_databases()`
 	getDatabasesResults := &[]models.GetDatabasesResult{}
 
-	err := c.GetQueryResults(getDatabasesResults, dbQuery)
+	err := c.Conn.Select(getDatabasesResults, dbQuery)
 	if err != nil {
 		return nil, fmt.Errorf("GetDatabasesFromVdp failed %s", err.Error())
 	}
@@ -78,20 +70,19 @@ func (c *Client) GetDatabasesFromVdp() (*[]models.GetDatabasesResult, error) {
 }
 
 func (c *Client) GetViewFromVdp(databaseName, viewName string) ([]models.GetViewsResult, error) {
-	query := fmt.Sprintf(`
-	              select
-	                database_name
-					, name
-					, view_type
-					, description
-				  from
-				    get_views()
-				  where
-				    database_name = '%s'
-					and name = '%s'`, databaseName, viewName)
+	query := `select
+                database_name
+                , name
+                , view_type
+                , description
+              from
+                get_views()
+              where
+                database_name = $1
+                and name = $2`
 	getViewsResults := &[]models.GetViewsResult{}
 
-	err := c.GetQueryResults(getViewsResults, query)
+	err := c.Conn.Select(getViewsResults, query, databaseName, viewName)
 	if err != nil || getViewsResults == nil {
 		return nil, fmt.Errorf("GetDatabasesFromVdp failed %s", err.Error())
 	}
@@ -99,27 +90,25 @@ func (c *Client) GetViewFromVdp(databaseName, viewName string) ([]models.GetView
 }
 
 func (c *Client) GetViewColumnsFromVdp(databaseName, viewName string) ([]models.GetViewColumnsResult, error) {
-	query := fmt.Sprintf(`
-	              select
-                    gvc.database_name
-                    , gv.view_type
-                    , gvc.view_name
-                    , gvc.column_name
-                    , gvc.column_remarks
-                  from
-                     get_view_columns()  gvc
-                  inner join
-                     get_views() gv
-                  on
-                     gvc.database_name = gv.database_name
-                     and gvc.view_name = gv.name
-				  where
-				    gvc.database_name = '%s'
-					and gvc.view_name = '%s'
-					`, databaseName, viewName)
+	query := `select
+                gvc.database_name
+                , gv.view_type
+                , gvc.view_name
+                , gvc.column_name
+                , gvc.column_remarks
+              from
+                get_view_columns()  gvc
+              inner join
+                get_views() gv
+              on
+                gvc.database_name = gv.database_name
+                and gvc.view_name = gv.name
+			  where
+                gvc.database_name = $1
+                and gvc.view_name = $2`
 	getViewColumnsResults := &[]models.GetViewColumnsResult{}
 
-	err := c.GetQueryResults(getViewColumnsResults, query)
+	err := c.Conn.Select(getViewColumnsResults, query, databaseName, viewName)
 	if err != nil || getViewColumnsResults == nil {
 		return nil, fmt.Errorf("GetViewColumnsFromVdp failed %s", err.Error())
 	}
@@ -139,6 +128,7 @@ func (c *Client) UpdateVdpDatabaseDesc(databaseName, description string) error {
 }
 
 func (c *Client) UpdateVdpTableDesc(getViewResult models.GetViewsResult, description string) error {
+	// Todo: use placeholder
 	alterTableTarget := getAlterViewType(getViewResult.ViewType)
 	alterStatement := fmt.Sprintf(`alter %s %s 
 	                               description = '%s'`,
