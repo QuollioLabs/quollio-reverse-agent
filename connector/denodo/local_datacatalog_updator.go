@@ -8,13 +8,13 @@ import (
 )
 
 func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.Database, dbAssets map[string]qdc.Data) error {
-	databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, localDatabase.DatabaseName, "database")
+	databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, localDatabase.DatabaseName, "schema")
 	if qdcDBAsset, ok := dbAssets[databaseGlobalID]; ok {
 		if shouldUpdateDenodoLocalDatabase(localDatabase, qdcDBAsset) {
 			putDatabaseInput := models.PutDatabaseInput{
 				DatabaseID:      localDatabase.DatabaseId,
 				Description:     qdcDBAsset.Description,
-				DescriptionType: localDatabase.DescriptionType,
+				DescriptionType: "RICH_TEXT",
 			}
 			err := d.DenodoRepo.UpdateLocalDatabases(putDatabaseInput)
 			if err != nil {
@@ -29,7 +29,7 @@ func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.
 					return err
 				}
 			}
-			d.Logger.Debug("Update Database description database name. database name: %s", localDatabase.DatabaseName)
+			d.Logger.Debug("Updated Database description database name. database name: %s", localDatabase.DatabaseName)
 		}
 	}
 	return nil
@@ -46,7 +46,7 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 			updateLocalViewInput := models.UpdateLocalViewInput{
 				ID:              localViewDetail.Id,
 				Description:     tableAsset.Description,
-				DescriptionType: localViewDetail.Description,
+				DescriptionType: "RICH_TEXT",
 			}
 			err = d.DenodoRepo.UpdateLocalViewDescription(updateLocalViewInput)
 			if err != nil {
@@ -61,7 +61,7 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 					return err
 				}
 			}
-			d.Logger.Debug("Update table description. database name: %s. table name: %s", localViewDetail.DatabaseName, localViewDetail.Name)
+			d.Logger.Debug("Updated table description. database name: %s. table name: %s", localViewDetail.DatabaseName, localViewDetail.Name)
 		}
 	}
 	return nil
@@ -97,7 +97,7 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 						return err
 					}
 				}
-				d.Logger.Debug("Update column description. database name: %s. table name: %s column name: %s", qdcDatabaseAsset.Name, qdcTableAsset.Name, localViewColumn.Name)
+				d.Logger.Debug("Updated column description. database name: %s. table name: %s column name: %s", qdcDatabaseAsset.Name, qdcTableAsset.Name, localViewColumn.Name)
 			}
 		}
 	}
