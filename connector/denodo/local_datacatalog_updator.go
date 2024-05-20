@@ -9,7 +9,7 @@ import (
 
 func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.Database, dbAssets map[string]qdc.Data) error {
 	if qdcDBAsset, ok := dbAssets[localDatabase.DatabaseName]; ok {
-		if localDatabase.DatabaseDescription != "" && qdcDBAsset.Description != "" {
+		if shouldUpdateDenodoLocalDatabase(localDatabase, qdcDBAsset) {
 			putDatabaseInput := models.PutDatabaseInput{
 				DatabaseID:      localDatabase.DatabaseId,
 				Description:     qdcDBAsset.Description,
@@ -41,7 +41,7 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 		if err != nil {
 			return err
 		}
-		if localViewDetail.Description == "" && tableAsset.Description != "" {
+		if shouldUpdateDenodoLocalTable(localViewDetail, tableAsset) {
 			updateLocalViewInput := models.UpdateLocalViewInput{
 				ID:              localViewDetail.Id,
 				Description:     tableAsset.Description,
@@ -76,7 +76,7 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 		}
 		localViewColumnMap := ConvertLocalColumnListToMap(localViewColumns)
 		if localViewColumn, ok := localViewColumnMap[columnAssetName]; ok {
-			if localViewColumn.Description == "" && columnAsset.Description != "" {
+			if shouldUpdateDenodoLocalColumn(localViewColumn, columnAsset) {
 				updateLocalViewColumnInput := models.UpdateLocalViewFieldInput{
 					DatabaseName:     qdcDatabaseAsset.Name,
 					FieldDescription: columnAsset.Description,
@@ -101,4 +101,28 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 		}
 	}
 	return nil
+}
+
+func shouldUpdateDenodoLocalDatabase(db models.Database, qdcDatabase qdc.Data) bool {
+	if db.DatabaseDescription == "" && qdcDatabase.Description != "" {
+		return true
+	}
+
+	return false
+}
+
+func shouldUpdateDenodoLocalTable(view models.ViewDetail, qdcTable qdc.Data) bool {
+	if view.Description == "" && qdcTable.Description != "" {
+		return true
+	}
+
+	return false
+}
+
+func shouldUpdateDenodoLocalColumn(viewColumn models.ViewColumn, qdcColumn qdc.Data) bool {
+	if viewColumn.Description == "" && qdcColumn.Description != "" {
+		return true
+	}
+
+	return false
 }
