@@ -1,8 +1,6 @@
-package denodo_test
+package denodo
 
 import (
-	"quollio-reverse-agent/connector/denodo"
-	"quollio-reverse-agent/repository/denodo/rest/models"
 	"quollio-reverse-agent/repository/qdc"
 	"testing"
 
@@ -158,53 +156,7 @@ func TestConvertQdcAssetListToMap(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := denodo.ConvertQdcAssetListToMap(testCase.Input)
-		for k, v := range res {
-			if d := cmp.Diff(v, testCase.Expect[k]); len(d) != 0 {
-				t.Errorf("want %v but got %v. Diff %s", testCase.Expect[k], v, d)
-			}
-		}
-	}
-}
-
-func TestConvertLocalColumnListToMap(t *testing.T) {
-	testCases := []struct {
-		Input  []models.ViewColumn
-		Expect map[string]models.ViewColumn
-	}{
-		{
-			Input: []models.ViewColumn{
-				{
-					Name:        "test-view1",
-					Description: "test-desc1",
-				},
-				{
-					Name:        "test-view2",
-					Description: "test-desc2",
-				},
-				{
-					Name:        "test-view3",
-					Description: "test-desc3",
-				},
-			},
-			Expect: map[string]models.ViewColumn{
-				"test-view1": {
-					Name:        "test-view1",
-					Description: "test-desc1",
-				},
-				"test-view2": {
-					Name:        "test-view2",
-					Description: "test-desc2",
-				},
-				"test-view3": {
-					Name:        "test-view3",
-					Description: "test-desc3",
-				},
-			},
-		},
-	}
-	for _, testCase := range testCases {
-		res := denodo.ConvertLocalColumnListToMap(testCase.Input)
+		res := convertQdcAssetListToMap(testCase.Input)
 		for k, v := range res {
 			if d := cmp.Diff(v, testCase.Expect[k]); len(d) != 0 {
 				t.Errorf("want %v but got %v. Diff %s", testCase.Expect[k], v, d)

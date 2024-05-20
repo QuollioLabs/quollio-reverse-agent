@@ -74,7 +74,7 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 		if err != nil {
 			return err
 		}
-		localViewColumnMap := ConvertLocalColumnListToMap(localViewColumns)
+		localViewColumnMap := convertLocalColumnListToMap(localViewColumns)
 		if localViewColumn, ok := localViewColumnMap[columnAssetName]; ok {
 			if shouldUpdateDenodoLocalColumn(localViewColumn, columnAsset) {
 				updateLocalViewColumnInput := models.UpdateLocalViewFieldInput{
@@ -125,4 +125,12 @@ func shouldUpdateDenodoLocalColumn(viewColumn models.ViewColumn, qdcColumn qdc.D
 	}
 
 	return false
+}
+
+func convertLocalColumnListToMap(localViewColumns []models.ViewColumn) map[string]models.ViewColumn {
+	mapViewColumns := make(map[string]models.ViewColumn)
+	for _, localViewColumn := range localViewColumns {
+		mapViewColumns[localViewColumn.Name] = localViewColumn
+	}
+	return mapViewColumns
 }

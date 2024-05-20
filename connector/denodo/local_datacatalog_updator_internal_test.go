@@ -4,6 +4,8 @@ import (
 	"quollio-reverse-agent/repository/denodo/rest/models"
 	"quollio-reverse-agent/repository/qdc"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestShouldUpdateDonodoLocalDatabase(t *testing.T) {
@@ -245,6 +247,52 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 		res := shouldUpdateDenodoLocalColumn(testCase.Input.LocalAsset, testCase.Input.QdcTableAsset)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %v. Name: %s", testCase.Expect, res, testCase.Input.LocalAsset.Name)
+		}
+	}
+}
+
+func TestConvertLocalColumnListToMap(t *testing.T) {
+	testCases := []struct {
+		Input  []models.ViewColumn
+		Expect map[string]models.ViewColumn
+	}{
+		{
+			Input: []models.ViewColumn{
+				{
+					Name:        "test-view1",
+					Description: "test-desc1",
+				},
+				{
+					Name:        "test-view2",
+					Description: "test-desc2",
+				},
+				{
+					Name:        "test-view3",
+					Description: "test-desc3",
+				},
+			},
+			Expect: map[string]models.ViewColumn{
+				"test-view1": {
+					Name:        "test-view1",
+					Description: "test-desc1",
+				},
+				"test-view2": {
+					Name:        "test-view2",
+					Description: "test-desc2",
+				},
+				"test-view3": {
+					Name:        "test-view3",
+					Description: "test-desc3",
+				},
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		res := convertLocalColumnListToMap(testCase.Input)
+		for k, v := range res {
+			if d := cmp.Diff(v, testCase.Expect[k]); len(d) != 0 {
+				t.Errorf("want %v but got %v. Diff %s", testCase.Expect[k], v, d)
+			}
 		}
 	}
 }

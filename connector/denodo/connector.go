@@ -8,7 +8,6 @@ import (
 	"quollio-reverse-agent/common/utils"
 	"quollio-reverse-agent/repository/denodo/odbc"
 	"quollio-reverse-agent/repository/denodo/rest"
-	"quollio-reverse-agent/repository/denodo/rest/models"
 	"quollio-reverse-agent/repository/qdc"
 )
 
@@ -111,21 +110,21 @@ func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 		d.Logger.Error("Failed to GetAllDenodoRootAssets: %s", err.Error())
 		return err
 	}
-	rootAssetsMap := ConvertQdcAssetListToMap(rootAssets)
+	rootAssetsMap := convertQdcAssetListToMap(rootAssets)
 
 	tableAssets, err := d.GetAllChildAssetsByID(rootAssets)
 	if err != nil {
 		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
 		return err
 	}
-	tableAssetsMap := ConvertQdcAssetListToMap(tableAssets)
+	tableAssetsMap := convertQdcAssetListToMap(tableAssets)
 
 	columnAssets, err := d.GetAllChildAssetsByID(tableAssets)
 	if err != nil {
 		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
 		return err
 	}
-	columnAssetsMap := ConvertQdcAssetListToMap(columnAssets)
+	columnAssetsMap := convertQdcAssetListToMap(columnAssets)
 
 	d.Logger.Info("Update Vdp assets metadata with qdic assets")
 	err = d.ReflectVdpMetadataToDataCatalog(rootAssetsMap, tableAssetsMap, columnAssetsMap)
@@ -202,18 +201,10 @@ func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog(qdcRootA
 	return nil
 }
 
-func ConvertQdcAssetListToMap(qdcAssetList []qdc.Data) map[string]qdc.Data {
+func convertQdcAssetListToMap(qdcAssetList []qdc.Data) map[string]qdc.Data {
 	mapQDCAsset := make(map[string]qdc.Data)
 	for _, qdcAsset := range qdcAssetList {
 		mapQDCAsset[qdcAsset.PhysicalName] = qdcAsset
 	}
 	return mapQDCAsset
-}
-
-func ConvertLocalColumnListToMap(localViewColumns []models.ViewColumn) map[string]models.ViewColumn {
-	mapViewColumns := make(map[string]models.ViewColumn)
-	for _, localViewColumn := range localViewColumns {
-		mapViewColumns[localViewColumn.Name] = localViewColumn
-	}
-	return mapViewColumns
 }
