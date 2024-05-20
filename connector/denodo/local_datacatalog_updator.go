@@ -8,7 +8,8 @@ import (
 )
 
 func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.Database, dbAssets map[string]qdc.Data) error {
-	if qdcDBAsset, ok := dbAssets[localDatabase.DatabaseName]; ok {
+	databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, localDatabase.DatabaseName, "database")
+	if qdcDBAsset, ok := dbAssets[databaseGlobalID]; ok {
 		if shouldUpdateDenodoLocalDatabase(localDatabase, qdcDBAsset) {
 			putDatabaseInput := models.PutDatabaseInput{
 				DatabaseID:      localDatabase.DatabaseId,
@@ -67,7 +68,7 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 }
 
 func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[string]qdc.Data) error {
-	for columnAssetName, columnAsset := range columnAssets {
+	for _, columnAsset := range columnAssets {
 		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(columnAsset, "schema3")
 		qdcTableAsset := utils.GetSpecifiedAssetFromPath(columnAsset, "table")
 		localViewColumns, err := d.DenodoRepo.GetViewColumns(qdcDatabaseAsset.Name, qdcTableAsset.Name)
@@ -75,7 +76,7 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 			return err
 		}
 		localViewColumnMap := convertLocalColumnListToMap(localViewColumns)
-		if localViewColumn, ok := localViewColumnMap[columnAssetName]; ok {
+		if localViewColumn, ok := localViewColumnMap[columnAsset.PhysicalName]; ok {
 			if shouldUpdateDenodoLocalColumn(localViewColumn, columnAsset) {
 				updateLocalViewColumnInput := models.UpdateLocalViewFieldInput{
 					DatabaseName:     qdcDatabaseAsset.Name,

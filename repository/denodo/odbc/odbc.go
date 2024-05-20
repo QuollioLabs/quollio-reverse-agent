@@ -69,7 +69,7 @@ func (c *Client) GetDatabasesFromVdp() (*[]models.GetDatabasesResult, error) {
 	return getDatabasesResults, nil
 }
 
-func (c *Client) GetViewFromVdp(databaseName, viewName string) ([]models.GetViewsResult, error) {
+func (c *Client) GetViewsFromVdp(databaseName string) ([]models.GetViewsResult, error) {
 	query := `select
                 database_name
                 , name
@@ -82,14 +82,14 @@ func (c *Client) GetViewFromVdp(databaseName, viewName string) ([]models.GetView
                 and name = $2`
 	getViewsResults := &[]models.GetViewsResult{}
 
-	err := c.Conn.Select(getViewsResults, query, databaseName, viewName)
+	err := c.Conn.Select(getViewsResults, query, databaseName)
 	if err != nil || getViewsResults == nil {
 		return nil, fmt.Errorf("GetDatabasesFromVdp failed %s", err.Error())
 	}
 	return *getViewsResults, nil
 }
 
-func (c *Client) GetViewColumnsFromVdp(databaseName, viewName string) ([]models.GetViewColumnsResult, error) {
+func (c *Client) GetViewColumnsFromVdp(databaseName string) ([]models.GetViewColumnsResult, error) {
 	query := `select
                 gvc.database_name
                 , gv.view_type
@@ -108,7 +108,7 @@ func (c *Client) GetViewColumnsFromVdp(databaseName, viewName string) ([]models.
                 and gvc.view_name = $2`
 	getViewColumnsResults := &[]models.GetViewColumnsResult{}
 
-	err := c.Conn.Select(getViewColumnsResults, query, databaseName, viewName)
+	err := c.Conn.Select(getViewColumnsResults, query, databaseName)
 	if err != nil || getViewColumnsResults == nil {
 		return nil, fmt.Errorf("GetViewColumnsFromVdp failed %s", err.Error())
 	}

@@ -7,6 +7,7 @@ import (
 	"quollio-reverse-agent/common/logger"
 	"quollio-reverse-agent/common/utils"
 	"quollio-reverse-agent/repository/denodo/odbc"
+	"quollio-reverse-agent/repository/denodo/odbc/models"
 	"quollio-reverse-agent/repository/denodo/rest"
 	"quollio-reverse-agent/repository/qdc"
 )
@@ -15,6 +16,8 @@ type DenodoConnector struct {
 	QDCExternalAPIClient qdc.QDCExternalAPI
 	DenodoRepo           rest.DenodoRepo
 	DenodoDBClient       *odbc.Client
+	CompanyID            string
+	DenodoHostName       string
 	Logger               *logger.BuiltinLogger
 }
 
@@ -23,6 +26,7 @@ func NewDenodoConnector(logger *logger.BuiltinLogger) (DenodoConnector, error) {
 	qdcBaseURL := os.Getenv("QDC_BASE_URL")
 	qdcClientID := os.Getenv("QDC_CLIENT_ID")
 	qdcClientSecret := os.Getenv("QDC_CLIENT_SECRET")
+	companyId := os.Getenv("COMPANY_ID")
 
 	denodoClientID := os.Getenv("DENODO_CLIENT_ID")
 	denodoClientSecret := os.Getenv("DENODO_CLIENT_SECRET")
@@ -35,7 +39,7 @@ func NewDenodoConnector(logger *logger.BuiltinLogger) (DenodoConnector, error) {
 		Port:     os.Getenv("DENODO_ODBC_PORT"),
 		SslMode:  "require",
 	}
-	client, err := denodoDBConfig.NewClient(qdcClientID, qdcClientSecret)
+	client, err := denodoDBConfig.NewClient(denodoClientID, denodoClientSecret)
 	if err != nil {
 		return DenodoConnector{}, err
 	}
@@ -46,6 +50,8 @@ func NewDenodoConnector(logger *logger.BuiltinLogger) (DenodoConnector, error) {
 		QDCExternalAPIClient: externalAPI,
 		DenodoRepo:           *denodoRepo,
 		DenodoDBClient:       client,
+		CompanyID:            companyId,
+		DenodoHostName:       denodoHostName,
 		Logger:               logger,
 	}
 	return connector, nil
@@ -131,7 +137,6 @@ func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 	if err != nil {
 		return err
 	}
-
 	err = d.ReflectDenodoDataCatalogMetadataToDataCatalog(rootAssetsMap, tableAssetsMap, columnAssetsMap)
 	if err != nil {
 		return err
@@ -146,27 +151,68 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 		return err
 	}
 	for _, vdpDatabase := range *vdpDatabases {
-		err = d.ReflectVdpDatabaseDescToDenodo(vdpDatabase, qdcRootAssetsMap)
+		denodoDBConfig := odbc.DenodoDBConfig{
+			Database: vdpDatabase.DatabaseName,
+			Host:     os.Getenv("DENODO_HOST_NAME"),
+			Port:     os.Getenv("DENODO_ODBC_PORT"),
+			SslMode:  "require",
+		}
+		client, err := denodoDBConfig.NewClient(os.Getenv("DENODO_CLIENT_ID"), os.Getenv("DENODO_CLIENT_SECRET"))
 		if err != nil {
-			d.Logger.Error("Failed to ReflectVdpDatabaseDescToDenodo: %s", err.Error())
 			return err
 		}
-	}
+		d.DenodoDBClient = client
 
-	d.Logger.Info("Update Denodo table assets")
-	err = d.ReflectVdpTableAttributeToDenodo(qdcTableAssetsMap)
-	if err != nil {
-		d.Logger.Error("Failed to ReflectVdpTableAttributeToDenodo: %s", err.Error())
-		return err
-	}
+		d.Logger.Info("Update Denodo database assets")
+		databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, vdpDatabase.DatabaseName, "database")
+		if qdcDatabaseAsset, ok := qdcRootAssetsMap[databaseGlobalID]; ok {
+			if shouldUpdateDenodoVdpDatabase(vdpDatabase, qdcDatabaseAsset) {
+				err := d.DenodoDBClient.UpdateVdpDatabaseDesc(vdpDatabase.DatabaseName, qdcDatabaseAsset.Description)
+				if err != nil {
+					return err
+				}
+				d.Logger.Debug("Update database description. database name: %s.", vdpDatabase.DatabaseName)
+			}
+		}
 
-	d.Logger.Info("Update Denodo column assets")
-	err = d.ReflectVdpColumnAttributeToDenodo(qdcColumnAssetsMap)
-	if err != nil {
-		d.Logger.Error("Failed to ReflectVdpColumnAttributeToDenodo: %s", err.Error())
-		return err
-	}
+		d.Logger.Info("Update Denodo table assets")
+		vdpTableAssets, err := d.DenodoDBClient.GetViewsFromVdp(vdpDatabase.DatabaseName)
+		if err != nil {
+			return err
+		}
+		for _, vdpTableAsset := range vdpTableAssets {
+			tableFQN := fmt.Sprintf(vdpDatabase.DatabaseName, vdpTableAsset.ViewName)
+			tableGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, tableFQN, "table")
+			if qdcTableAsset, ok := qdcTableAssetsMap[tableGlobalID]; ok {
+				if shouldUpdateDenodoVdpTable(vdpTableAsset, qdcTableAsset) {
+					err := d.DenodoDBClient.UpdateVdpTableDesc(vdpTableAsset, qdcTableAsset.Description)
+					if err != nil {
+						return err
+					}
+					d.Logger.Debug("Update table description. database name: %s. table name: %s", vdpTableAsset.DatabaseName, vdpTableAsset.ViewName)
+				}
+			}
+		}
+		d.Logger.Info("Update Denodo column assets")
+		vdpColumnAssets, err := d.DenodoDBClient.GetViewColumnsFromVdp(vdpDatabase.DatabaseName)
+		if err != nil {
+			return err
+		}
+		for _, vdpColumnAsset := range vdpColumnAssets {
+			columnFQN := fmt.Sprintf(vdpDatabase.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
+			columnGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, columnFQN, "column")
+			if qdcColumnAsset, ok := qdcColumnAssetsMap[columnGlobalID]; ok {
+				if shouldUpdateDenodoVdpColumn(vdpColumnAsset, qdcColumnAsset) {
+					err := d.DenodoDBClient.UpdateVdpTableColumnDesc(vdpColumnAsset, qdcColumnAsset.Description)
+					if err != nil {
+						return err
+					}
+					d.Logger.Debug("Update column description. database name: %s. table name: %s. column name: %s", vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
+				}
+			}
+		}
 
+	}
 	return nil
 }
 
@@ -204,7 +250,31 @@ func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog(qdcRootA
 func convertQdcAssetListToMap(qdcAssetList []qdc.Data) map[string]qdc.Data {
 	mapQDCAsset := make(map[string]qdc.Data)
 	for _, qdcAsset := range qdcAssetList {
-		mapQDCAsset[qdcAsset.PhysicalName] = qdcAsset
+		mapQDCAsset[qdcAsset.ID] = qdcAsset
 	}
 	return mapQDCAsset
+}
+
+func shouldUpdateDenodoVdpDatabase(db models.GetDatabasesResult, qdcDatabase qdc.Data) bool {
+	if !db.Description.Valid && qdcDatabase.Description != "" {
+		return true
+	}
+
+	return false
+}
+
+func shouldUpdateDenodoVdpTable(view models.GetViewsResult, qdcTable qdc.Data) bool {
+	if !view.Description.Valid && qdcTable.Description != "" {
+		return true
+	}
+
+	return false
+}
+
+func shouldUpdateDenodoVdpColumn(viewColumn models.GetViewColumnsResult, qdcColumn qdc.Data) bool {
+	if !viewColumn.ColumnRemarks.Valid && qdcColumn.Description != "" {
+		return true
+	}
+
+	return false
 }
