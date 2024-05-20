@@ -105,6 +105,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 				LocalAsset: models.ViewDetail{
 					Name:        "test-view1",
 					Description: "test-view1-desc",
+					InLocal:     true,
 				},
 				QdcTableAsset: qdc.Data{
 					PhysicalName: "test-table1",
@@ -121,6 +122,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 				LocalAsset: models.ViewDetail{
 					Name:        "test-table2",
 					Description: "",
+					InLocal:     true,
 				},
 				QdcTableAsset: qdc.Data{
 					PhysicalName: "test-table2",
@@ -137,6 +139,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 				LocalAsset: models.ViewDetail{
 					Name:        "test-table3",
 					Description: "test-table3",
+					InLocal:     true,
 				},
 				QdcTableAsset: qdc.Data{
 					PhysicalName: "test-table3",
@@ -153,10 +156,28 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 				LocalAsset: models.ViewDetail{
 					Name:        "test-table4",
 					Description: "",
+					InLocal:     true,
 				},
 				QdcTableAsset: qdc.Data{
 					PhysicalName: "test-table4",
 					Description:  "",
+				},
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.ViewDetail
+				QdcTableAsset qdc.Data
+			}{
+				LocalAsset: models.ViewDetail{
+					Name:        "test-table2",
+					Description: "",
+					InLocal:     false,
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table2",
+					Description:  "test-table2",
 				},
 			},
 			Expect: false,
@@ -186,6 +207,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 				LocalAsset: models.ViewColumn{
 					Name:        "test-col1",
 					Description: "test-col1-desc",
+					InLocal:     true,
 				},
 				QdcTableAsset: qdc.Data{
 					PhysicalName: "test-col1",
@@ -202,6 +224,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 				LocalAsset: models.ViewColumn{
 					Name:        "test-col2",
 					Description: "",
+					InLocal:     true,
 				},
 				QdcTableAsset: qdc.Data{
 					PhysicalName: "test-col2",
@@ -218,6 +241,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 				LocalAsset: models.ViewColumn{
 					Name:        "test-col3",
 					Description: "test-col3",
+					InLocal:     true,
 				},
 				QdcTableAsset: qdc.Data{
 					PhysicalName: "test-col3",
@@ -234,10 +258,28 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 				LocalAsset: models.ViewColumn{
 					Name:        "test-col4",
 					Description: "",
+					InLocal:     true,
 				},
 				QdcTableAsset: qdc.Data{
 					PhysicalName: "test-col4",
 					Description:  "",
+				},
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.ViewColumn
+				QdcTableAsset qdc.Data
+			}{
+				LocalAsset: models.ViewColumn{
+					Name:        "test-col2",
+					Description: "",
+					InLocal:     false,
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col2",
+					Description:  "test-col2",
 				},
 			},
 			Expect: false,

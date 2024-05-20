@@ -112,7 +112,7 @@ func shouldUpdateDenodoLocalDatabase(db models.Database, qdcDatabase qdc.Data) b
 }
 
 func shouldUpdateDenodoLocalTable(view models.ViewDetail, qdcTable qdc.Data) bool {
-	if view.Description == "" && qdcTable.Description != "" {
+	if view.InLocal && view.Description == "" && qdcTable.Description != "" {
 		return true
 	}
 
@@ -120,7 +120,7 @@ func shouldUpdateDenodoLocalTable(view models.ViewDetail, qdcTable qdc.Data) boo
 }
 
 func shouldUpdateDenodoLocalColumn(viewColumn models.ViewColumn, qdcColumn qdc.Data) bool {
-	if viewColumn.Description == "" && qdcColumn.Description != "" {
+	if viewColumn.InLocal && viewColumn.Description == "" && qdcColumn.Description != "" {
 		return true
 	}
 
