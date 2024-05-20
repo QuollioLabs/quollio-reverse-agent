@@ -9,7 +9,7 @@ import (
 
 func (d *DenodoConnector) ReflectVdpDatabaseDescToDenodo(getDatabaseResult models.GetDatabasesResult, dbAssets map[string]qdc.Data) error {
 	if qdcDBAsset, ok := dbAssets[getDatabaseResult.DatabaseName]; ok {
-		if !getDatabaseResult.Description.Valid && qdcDBAsset.Description != "" {
+		if shouldUpdateDenodoVdpDatabase(getDatabaseResult, qdcDBAsset) {
 			err := d.DenodoDBClient.UpdateVdpDatabaseDesc(getDatabaseResult.DatabaseName, qdcDBAsset.Description)
 			if err != nil {
 				return fmt.Errorf("ReflectVdpDatabaseDescToDenodo failed %s", err.Error())
@@ -32,7 +32,7 @@ func (d *DenodoConnector) ReflectVdpTableAttributeToDenodo(qdcTableAssets map[st
 			continue
 		}
 
-		if !vdpTableAsset[0].Description.Valid && qdcTableAsset.Description != "" {
+		if shouldUpdateDenodoVdpTable(vdpTableAsset[0], qdcTableAsset) {
 			err := d.DenodoDBClient.UpdateVdpTableDesc(vdpTableAsset[0], qdcTableAsset.Description)
 			if err != nil {
 				return fmt.Errorf("ReflectVdpTableAttributeToDenodo failed %s", err.Error())
@@ -56,7 +56,7 @@ func (d *DenodoConnector) ReflectVdpColumnAttributeToDenodo(qdcColumnAssets map[
 			continue
 		}
 
-		if !vdpColumnAsset[0].ColumnRemarks.Valid && qdcColumnAsset.Description != "" {
+		if shouldUpdateDenodoVdpColumn(vdpColumnAsset[0], qdcColumnAsset) {
 			err := d.DenodoDBClient.UpdateVdpTableColumnDesc(vdpColumnAsset[0], qdcColumnAsset.Description)
 			if err != nil {
 				return fmt.Errorf("UpdateVdpTableColumnDesc failed %s", err.Error())
@@ -67,4 +67,28 @@ func (d *DenodoConnector) ReflectVdpColumnAttributeToDenodo(qdcColumnAssets map[
 		}
 	}
 	return nil
+}
+
+func shouldUpdateDenodoVdpDatabase(db models.GetDatabasesResult, qdcDatabase qdc.Data) bool {
+	if !db.Description.Valid && qdcDatabase.Description != "" {
+		return true
+	}
+
+	return false
+}
+
+func shouldUpdateDenodoVdpTable(view models.GetViewsResult, qdcTable qdc.Data) bool {
+	if !view.Description.Valid && qdcTable.Description != "" {
+		return true
+	}
+
+	return false
+}
+
+func shouldUpdateDenodoVdpColumn(viewColumn models.GetViewColumnsResult, qdcColumn qdc.Data) bool {
+	if !viewColumn.ColumnRemarks.Valid && qdcColumn.Description != "" {
+		return true
+	}
+
+	return false
 }
