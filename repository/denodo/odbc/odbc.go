@@ -78,8 +78,7 @@ func (c *Client) GetViewsFromVdp(databaseName string) ([]models.GetViewsResult, 
               from
                 get_views()
               where
-                database_name = $1
-                and name = $2`
+                database_name = $1`
 	getViewsResults := &[]models.GetViewsResult{}
 
 	err := c.Conn.Select(getViewsResults, query, databaseName)
@@ -104,8 +103,7 @@ func (c *Client) GetViewColumnsFromVdp(databaseName string) ([]models.GetViewCol
                 gvc.database_name = gv.database_name
                 and gvc.view_name = gv.name
 			  where
-                gvc.database_name = $1
-                and gvc.view_name = $2`
+                gvc.database_name = $1`
 	getViewColumnsResults := &[]models.GetViewColumnsResult{}
 
 	err := c.Conn.Select(getViewColumnsResults, query, databaseName)
