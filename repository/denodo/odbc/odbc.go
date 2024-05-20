@@ -116,10 +116,8 @@ func (c *Client) GetViewColumnsFromVdp(databaseName, viewName string) ([]models.
 }
 
 func (c *Client) UpdateVdpDatabaseDesc(databaseName, description string) error {
-	alterStatement := fmt.Sprintf(`
-	                    alter database %s 
-	                    description = '%s'`, databaseName, escapeSingleQuoteInString(description))
-
+	// Todo: use placeholder
+	alterStatement := fmt.Sprintf(`alter database %s '%s'`, databaseName, escapeSingleQuoteInString(description))
 	err := c.ExecuteQuery(alterStatement)
 	if err != nil {
 		return fmt.Errorf("UpdateVdpDatabaseDesc failed %s", err)
@@ -145,8 +143,7 @@ func (c *Client) UpdateVdpTableDesc(getViewResult models.GetViewsResult, descrip
 
 func (c *Client) UpdateVdpTableColumnDesc(getViewColumnResult models.GetViewColumnsResult, description string) error {
 	alterTableTarget := getAlterViewType(getViewColumnResult.ViewType)
-	alterStatement := fmt.Sprintf(`alter %s %s 
-	                               alter column %s add (description = '%s')`,
+	alterStatement := fmt.Sprintf(`alter %s %s (alter column %s add (description = '%s'))`,
 		alterTableTarget,
 		getViewColumnResult.ViewName,
 		getViewColumnResult.ColumnName,
