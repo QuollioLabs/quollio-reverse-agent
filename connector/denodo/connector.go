@@ -105,59 +105,64 @@ func (d *DenodoConnector) GetAllChildAssetsByID(parentAssets []qdc.Data) ([]qdc.
 }
 
 func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
-	err := d.ReflectVdpMetadataToDataCatalog()
+	d.Logger.Info("Get Denodo assets from QDIC")
+	rootAssets, err := d.GetAllDenodoRootAssets()
+	if err != nil {
+		d.Logger.Error("Failed to GetAllDenodoRootAssets: %s", err.Error())
+		return err
+	}
+	rootAssetsMap := ConvertQdcAssetListToMap(rootAssets)
+
+	tableAssets, err := d.GetAllChildAssetsByID(rootAssets)
+	if err != nil {
+		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
+		return err
+	}
+	tableAssetsMap := ConvertQdcAssetListToMap(tableAssets)
+
+	columnAssets, err := d.GetAllChildAssetsByID(tableAssets)
+	if err != nil {
+		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
+		return err
+	}
+	columnAssetsMap := ConvertQdcAssetListToMap(columnAssets)
+
+	d.Logger.Info("Update Vdp assets metadata with qdic assets")
+	err = d.ReflectVdpMetadataToDataCatalog(rootAssetsMap, tableAssetsMap, columnAssetsMap)
 	if err != nil {
 		return err
 	}
 
-	err = d.ReflectDenodoDataCatalogMetadataToDataCatalog()
+	err = d.ReflectDenodoDataCatalogMetadataToDataCatalog(rootAssetsMap, tableAssetsMap, columnAssetsMap)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog() error {
-	d.Logger.Info("List Denodo database assets")
-	rootAssets, err := d.GetAllDenodoRootAssets()
-	if err != nil {
-		d.Logger.Error("Failed to GetAllDenodoRootAssets: %s", err.Error())
-		return err
-	}
+func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcTableAssetsMap, qdcColumnAssetsMap map[string]qdc.Data) error {
+	d.Logger.Info("Update Denodo database assets")
 	vdpDatabases, err := d.DenodoDBClient.GetDatabasesFromVdp()
 	if err != nil {
 		return err
 	}
-	qdcDatabaseAssetMap := ConvertQdcAssetListToMap(rootAssets)
 	for _, vdpDatabase := range *vdpDatabases {
-		err = d.ReflectVdpDatabaseDescToDenodo(vdpDatabase, qdcDatabaseAssetMap)
+		err = d.ReflectVdpDatabaseDescToDenodo(vdpDatabase, qdcRootAssetsMap)
 		if err != nil {
 			d.Logger.Error("Failed to ReflectVdpDatabaseDescToDenodo: %s", err.Error())
 			return err
 		}
 	}
 
-	d.Logger.Info("List Denodo table assets")
-	tableAssets, err := d.GetAllChildAssetsByID(rootAssets)
-	if err != nil {
-		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
-		return err
-	}
-	qdcTableAssetMap := ConvertQdcAssetListToMap(tableAssets)
-	err = d.ReflectVdpTableAttributeToDenodo(qdcTableAssetMap)
+	d.Logger.Info("Update Denodo table assets")
+	err = d.ReflectVdpTableAttributeToDenodo(qdcTableAssetsMap)
 	if err != nil {
 		d.Logger.Error("Failed to ReflectVdpTableAttributeToDenodo: %s", err.Error())
 		return err
 	}
 
-	d.Logger.Info("List Denodo column assets")
-	columnAssets, err := d.GetAllChildAssetsByID(tableAssets)
-	if err != nil {
-		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
-		return err
-	}
-	qdcColumnAssetMap := ConvertQdcAssetListToMap(columnAssets)
-	err = d.ReflectVdpColumnAttributeToDenodo(qdcColumnAssetMap)
+	d.Logger.Info("Update Denodo column assets")
+	err = d.ReflectVdpColumnAttributeToDenodo(qdcColumnAssetsMap)
 	if err != nil {
 		d.Logger.Error("Failed to ReflectVdpColumnAttributeToDenodo: %s", err.Error())
 		return err
@@ -166,20 +171,14 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog() error {
 	return nil
 }
 
-func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog() error {
+func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog(qdcRootAssetsMap, qdcTableAssetsMap, qdcColumnAssetsMap map[string]qdc.Data) error {
 	d.Logger.Info("List Denodo database assets")
-	rootAssets, err := d.GetAllDenodoRootAssets()
-	if err != nil {
-		d.Logger.Error("Failed to GetAllDenodoRootAssets: %s", err.Error())
-		return err
-	}
 	localDatabases, err := d.DenodoRepo.GetLocalDatabases()
 	if err != nil {
 		return err
 	}
-	qdcDatabaseAssetMap := ConvertQdcAssetListToMap(rootAssets)
 	for _, localDatabase := range localDatabases {
-		err = d.ReflectLocalDatabaseDescToDenodo(localDatabase, qdcDatabaseAssetMap)
+		err = d.ReflectLocalDatabaseDescToDenodo(localDatabase, qdcRootAssetsMap)
 		if err != nil {
 			d.Logger.Error("Failed to ReflectLocalDatabaseDescToDenodo: %s", err.Error())
 			return err
@@ -187,26 +186,14 @@ func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog() error 
 	}
 
 	d.Logger.Info("List Denodo table assets")
-	tableAssets, err := d.GetAllChildAssetsByID(rootAssets)
-	if err != nil {
-		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
-		return err
-	}
-	qdcTableAssetMap := ConvertQdcAssetListToMap(tableAssets)
-	err = d.ReflectLocalTableAttributeToDenodo(qdcTableAssetMap)
+	err = d.ReflectLocalTableAttributeToDenodo(qdcTableAssetsMap)
 	if err != nil {
 		d.Logger.Error("Failed to ReflectLocalTableAttributeToDenodo: %s", err.Error())
 		return err
 	}
 
 	d.Logger.Info("List Denodo column assets")
-	columnAssets, err := d.GetAllChildAssetsByID(tableAssets)
-	if err != nil {
-		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
-		return err
-	}
-	qdcColumnAssetMap := ConvertQdcAssetListToMap(columnAssets)
-	err = d.ReflectLocalColumnAttributeToDenodo(qdcColumnAssetMap)
+	err = d.ReflectLocalColumnAttributeToDenodo(qdcColumnAssetsMap)
 	if err != nil {
 		d.Logger.Error("Failed to ReflectLocalColumnAttributeToDenodo: %s", err.Error())
 		return err
