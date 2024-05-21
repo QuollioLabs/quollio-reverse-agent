@@ -126,6 +126,7 @@ func (g *GlueConnector) ReflectDatabaseDescToAthena(dbAssets []qdc.Data) error {
 			updateDatabaseInput := genUpdateDatabaseInput(glueDB)
 
 			if shouldDatabaseBeUpdated(g.overwriteMode, glueDB, dbAsset) {
+				g.Logger.Debug("Database will be updated. name %s", *glueDB.Name)
 				descWithPrefix := utils.AddQDICToStringAsPrefix(dbAsset.Description)
 				updateDatabaseInput.DatabaseInput.Description = &descWithPrefix
 				_, err := g.GlueRepo.UpdateDatabase(updateDatabaseInput, g.AthenaAccountID)
@@ -139,6 +140,7 @@ func (g *GlueConnector) ReflectDatabaseDescToAthena(dbAssets []qdc.Data) error {
 					}
 					return err
 				}
+				g.Logger.Debug("Update database. name %s", *glueDB.Name)
 			}
 		}
 		// Todo: display diff after updating.
@@ -181,6 +183,7 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 		updateTableInput := genUpdateTableInput(glueTable)
 		if shouldTableBeUpdated(g.overwriteMode, glueTable.Table, tableAsset) {
 			descWithPrefix := utils.AddQDICToStringAsPrefix(tableAsset.Description)
+			g.Logger.Debug("Table will be updated: %s", *glueTable.Table.Name)
 			updateTableInput.TableInput.Description = &descWithPrefix
 			tableShouldBeUpdated = true
 		}
