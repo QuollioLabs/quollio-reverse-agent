@@ -11,9 +11,10 @@ func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.
 	databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, localDatabase.DatabaseName, "schema")
 	if qdcDBAsset, ok := dbAssets[databaseGlobalID]; ok {
 		if shouldUpdateDenodoLocalDatabase(localDatabase, qdcDBAsset) {
+			descWithPrefix := utils.AddQDICToStringAsPrefix(qdcDBAsset.Description)
 			putDatabaseInput := models.PutDatabaseInput{
 				DatabaseID:      localDatabase.DatabaseId,
-				Description:     qdcDBAsset.Description,
+				Description:     descWithPrefix,
 				DescriptionType: "RICH_TEXT",
 			}
 			err := d.DenodoRepo.UpdateLocalDatabases(putDatabaseInput)
@@ -43,9 +44,10 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 			return err
 		}
 		if shouldUpdateDenodoLocalTable(localViewDetail, tableAsset) {
+			descWithPrefix := utils.AddQDICToStringAsPrefix(tableAsset.Description)
 			updateLocalViewInput := models.UpdateLocalViewInput{
 				ID:              localViewDetail.Id,
-				Description:     tableAsset.Description,
+				Description:     descWithPrefix,
 				DescriptionType: "RICH_TEXT",
 			}
 			err = d.DenodoRepo.UpdateLocalViewDescription(updateLocalViewInput)
@@ -78,9 +80,10 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 		localViewColumnMap := convertLocalColumnListToMap(localViewColumns)
 		if localViewColumn, ok := localViewColumnMap[columnAsset.PhysicalName]; ok {
 			if shouldUpdateDenodoLocalColumn(localViewColumn, columnAsset) {
+				descWithPrefix := utils.AddQDICToStringAsPrefix(columnAsset.Description)
 				updateLocalViewColumnInput := models.UpdateLocalViewFieldInput{
 					DatabaseName:     qdcDatabaseAsset.Name,
-					FieldDescription: columnAsset.Description,
+					FieldDescription: descWithPrefix,
 					FieldName:        localViewColumn.Name,
 					ViewName:         qdcTableAsset.Name,
 				}

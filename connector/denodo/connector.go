@@ -168,7 +168,8 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 		databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, vdpDatabase.DatabaseName, "schema")
 		if qdcDatabaseAsset, ok := qdcRootAssetsMap[databaseGlobalID]; ok {
 			if shouldUpdateDenodoVdpDatabase(vdpDatabase, qdcDatabaseAsset) {
-				err := d.DenodoDBClient.UpdateVdpDatabaseDesc(vdpDatabase.DatabaseName, qdcDatabaseAsset.Description)
+				descWithPrefix := utils.AddQDICToStringAsPrefix(qdcDatabaseAsset.Description)
+				err := d.DenodoDBClient.UpdateVdpDatabaseDesc(vdpDatabase.DatabaseName, descWithPrefix)
 				if err != nil {
 					return err
 				}
@@ -186,7 +187,8 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 			tableGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, tableFQN, "table")
 			if qdcTableAsset, ok := qdcTableAssetsMap[tableGlobalID]; ok {
 				if shouldUpdateDenodoVdpTable(vdpTableAsset, qdcTableAsset) {
-					err := d.DenodoDBClient.UpdateVdpTableDesc(vdpTableAsset, qdcTableAsset.Description)
+					descWithPrefix := utils.AddQDICToStringAsPrefix(qdcTableAsset.Description)
+					err := d.DenodoDBClient.UpdateVdpTableDesc(vdpTableAsset, descWithPrefix)
 					if err != nil {
 						return err
 					}
@@ -208,7 +210,8 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 					continue
 				}
 				if shouldUpdateDenodoVdpColumn(vdpColumnAsset, qdcColumnAsset) {
-					err := d.DenodoDBClient.UpdateVdpTableColumnDesc(vdpColumnAsset, qdcColumnAsset.Description)
+					descWithPrefix := utils.AddQDICToStringAsPrefix(qdcColumnAsset.Description)
+					err := d.DenodoDBClient.UpdateVdpTableColumnDesc(vdpColumnAsset, descWithPrefix)
 					if err != nil {
 						return err
 					}

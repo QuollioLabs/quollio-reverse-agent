@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/hex"
+	"fmt"
 	"quollio-reverse-agent/repository/qdc"
 
 	hash "lukechampine.com/blake3"
@@ -51,4 +52,8 @@ func GetGlobalId(companyId string, clusterId string, dataId string, dataType str
 	hash := hash.Sum512([]byte(companyId + clusterId + dataId))
 	ret := prefix + hex.EncodeToString(hash[:16])
 	return ret
+}
+
+func AddQDICToStringAsPrefix(input string) string {
+	return fmt.Sprint("【QDIC】", input)
 }

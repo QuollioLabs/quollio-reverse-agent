@@ -109,3 +109,21 @@ func TestSplitArrayToChunks(t *testing.T) {
 		}
 	}
 }
+
+func TestAddQDICToStringAsPrefix(t *testing.T) {
+	testCases := []struct {
+		Input  string
+		Expect string
+	}{
+		{
+			Input:  "test-string",
+			Expect: "【QDIC】test-string",
+		},
+	}
+	for _, testCase := range testCases {
+		res := utils.AddQDICToStringAsPrefix(testCase.Input)
+		if res != testCase.Expect {
+			t.Errorf("test failed. want %s, but got %s", testCase.Expect, res)
+		}
+	}
+}
