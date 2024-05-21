@@ -253,6 +253,44 @@ func TestShouldUpdateDenodoVdpDatabase(t *testing.T) {
 			},
 			Expect: false,
 		},
+		{
+			Input: struct {
+				VdpAsset   models.GetDatabasesResult
+				QdcDBAsset qdc.Data
+			}{
+				VdpAsset: models.GetDatabasesResult{
+					DatabaseName: "test-db5",
+					Description: sql.NullString{
+						Valid:  true,
+						String: "【QDIC】test",
+					},
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-db5",
+					Description:  "【QDIC】test1",
+				},
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				VdpAsset   models.GetDatabasesResult
+				QdcDBAsset qdc.Data
+			}{
+				VdpAsset: models.GetDatabasesResult{
+					DatabaseName: "test-db6",
+					Description: sql.NullString{
+						Valid:  true,
+						String: "test【QDIC】",
+					},
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-db6",
+					Description:  "【QDIC】test1",
+				},
+			},
+			Expect: false,
+		},
 	}
 	for _, testCase := range testCases {
 		res := shouldUpdateDenodoVdpDatabase(testCase.Input.VdpAsset, testCase.Input.QdcDBAsset)
@@ -346,6 +384,44 @@ func TestShouldUpdateDenodoVdpTable(t *testing.T) {
 			},
 			Expect: false,
 		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewsResult
+				QdcTableAsset qdc.Data
+			}{
+				VdpAsset: models.GetViewsResult{
+					ViewName: "test-table5",
+					Description: sql.NullString{
+						Valid:  true,
+						String: "【QDIC】test5",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table5",
+					Description:  "【QDIC】test5",
+				},
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewsResult
+				QdcTableAsset qdc.Data
+			}{
+				VdpAsset: models.GetViewsResult{
+					ViewName: "test-table6",
+					Description: sql.NullString{
+						Valid:  true,
+						String: "test6【QDIC】",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table6",
+					Description:  "【QDIC】test6",
+				},
+			},
+			Expect: false,
+		},
 	}
 	for _, testCase := range testCases {
 		res := shouldUpdateDenodoVdpTable(testCase.Input.VdpAsset, testCase.Input.QdcTableAsset)
@@ -435,6 +511,44 @@ func TestShouldUpdateDenodoVdpColumn(t *testing.T) {
 				QdcTableAsset: qdc.Data{
 					PhysicalName: "test-col4",
 					Description:  "",
+				},
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewColumnsResult
+				QdcTableAsset qdc.Data
+			}{
+				VdpAsset: models.GetViewColumnsResult{
+					ColumnName: "test-col5",
+					ColumnRemarks: sql.NullString{
+						Valid:  true,
+						String: "【QDIC】test5",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col5",
+					Description:  "【QDIC】test5",
+				},
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewColumnsResult
+				QdcTableAsset qdc.Data
+			}{
+				VdpAsset: models.GetViewColumnsResult{
+					ColumnName: "test-col6",
+					ColumnRemarks: sql.NullString{
+						Valid:  true,
+						String: "test6【QDIC】",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col6",
+					Description:  "【QDIC】test6",
 				},
 			},
 			Expect: false,
