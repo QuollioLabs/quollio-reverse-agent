@@ -1,8 +1,7 @@
-package glue_test
+package glue
 
 import (
 	"encoding/json"
-	"quollio-reverse-agent/connector/glue"
 	"quollio-reverse-agent/repository/qdc"
 	"reflect"
 	"testing"
@@ -162,76 +161,11 @@ func TestMapColumnAssetByColumnName(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := glue.MapColumnAssetByColumnName(testCase.Input)
+		res := mapColumnAssetByColumnName(testCase.Input)
 		for k, v := range res {
 			if d := cmp.Diff(v, testCase.Expect[k]); len(d) != 0 {
 				t.Errorf("want %v but got %v. Diff %s", testCase.Expect[k], v, d)
 			}
-		}
-	}
-}
-
-func TestGetSpecifiedAssetFromPath(t *testing.T) {
-	testCases := []struct {
-		Input struct {
-			Asset     qdc.Data
-			PathLayer string
-		}
-		Expect qdc.Path
-	}{
-		{
-			Input: struct {
-				Asset     qdc.Data
-				PathLayer string
-			}{
-				Asset: qdc.Data{
-					Path: []qdc.Path{
-						{
-							PathLayer:  "schema4",
-							ID:         "schm-1234",
-							ObjectType: "schema",
-							Name:       "test-project",
-						},
-						{
-							PathLayer:  "schema3",
-							ID:         "schm-5678",
-							ObjectType: "schema",
-							Name:       "test-dataset1",
-						},
-						{
-							PathLayer:  "table",
-							ID:         "tbl-1234",
-							ObjectType: "table",
-							Name:       "test-table1",
-						},
-						{
-							PathLayer:  "column",
-							ID:         "clmn-1234",
-							ObjectType: "column",
-							Name:       "test-column-name1",
-						},
-					},
-					ID:           "clmn-1234",
-					ObjectType:   "column",
-					ServiceName:  "athena",
-					PhysicalName: "test-column-name1",
-					Description:  "test-description",
-					DataType:     "string",
-				},
-				PathLayer: "schema3",
-			},
-			Expect: qdc.Path{
-				PathLayer:  "schema3",
-				ID:         "schm-5678",
-				ObjectType: "schema",
-				Name:       "test-dataset1",
-			},
-		},
-	}
-	for _, testCase := range testCases {
-		res := glue.GetSpecifiedAssetFromPath(testCase.Input.Asset, testCase.Input.PathLayer)
-		if res != testCase.Expect {
-			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}
 	}
 }
@@ -265,45 +199,7 @@ func TestMapDBAssetByDBName(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := glue.MapDBAssetByDBName(testCase.Input)
-		for k, v := range res {
-			if !reflect.DeepEqual(v, testCase.Expect[k]) {
-				t.Errorf("want %v but got %v.", testCase.Expect[k], v)
-			}
-		}
-	}
-}
-
-func TestMapTableAssetByTableName(t *testing.T) {
-	testCases := []struct {
-		Input  []types.Table
-		Expect map[string]types.Table
-	}{
-		{
-			Input: []types.Table{
-				{
-					Name:        genStringPointer("test-table-name1"),
-					Description: genStringPointer("test-table-description1"),
-				},
-				{
-					Name:        genStringPointer("test-table-name2"),
-					Description: genStringPointer("test-table-description2"),
-				},
-			},
-			Expect: map[string]types.Table{
-				"test-table-name1": {
-					Name:        genStringPointer("test-table-name1"),
-					Description: genStringPointer("test-table-description1"),
-				},
-				"test-table-name2": {
-					Name:        genStringPointer("test-table-name2"),
-					Description: genStringPointer("test-table-description2"),
-				},
-			},
-		},
-	}
-	for _, testCase := range testCases {
-		res := glue.MapTableAssetByTableName(testCase.Input)
+		res := mapDBAssetByDBName(testCase.Input)
 		for k, v := range res {
 			if !reflect.DeepEqual(v, testCase.Expect[k]) {
 				t.Errorf("want %v but got %v.", testCase.Expect[k], v)
@@ -399,7 +295,7 @@ func TestGetDescUpdatedColumns(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res, b := glue.GetDescUpdatedColumns(testCase.Input.GlueTable, testCase.Input.ColumnAssets)
+		res, b := getDescUpdatedColumns(testCase.Input.GlueTable, testCase.Input.ColumnAssets)
 		if !reflect.DeepEqual(res, testCase.Expect.Columns) || b != testCase.Expect.ShouldBeUpdated {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}
@@ -456,7 +352,7 @@ func TestGenUpdateMessage(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := glue.GenUpdateMessage(testCase.Input.TableUpdated, testCase.Input.ColumnUpdated)
+		res := genUpdateMessage(testCase.Input.TableUpdated, testCase.Input.ColumnUpdated)
 		if res != testCase.Expect {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}
@@ -534,7 +430,7 @@ func TestGenUpdateDatabaseInput(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := glue.GenUpdateDatabaseInput(testCase.Input)
+		res := genUpdateDatabaseInput(testCase.Input)
 		got, err := json.Marshal(res)
 		if err != nil {
 			t.Errorf("parse failed. %s", err.Error())
@@ -660,7 +556,7 @@ func TestGenUpdateTableInput(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := glue.GenUpdateTableInput(testCase.Input)
+		res := genUpdateTableInput(testCase.Input)
 		got, err := json.Marshal(res)
 		if err != nil {
 			t.Errorf("parse failed. %s", err.Error())
@@ -781,7 +677,7 @@ func TestShouldDatabaseBeUpdated(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := glue.ShouldDatabaseBeUpdated(testCase.Input.GlueDB, testCase.Input.DBAsset)
+		res := shouldDatabaseBeUpdated(testCase.Input.GlueDB, testCase.Input.DBAsset)
 		if res != testCase.Expect {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}
@@ -894,7 +790,7 @@ func TestShouldTableBeUpdated(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := glue.ShouldTableBeUpdated(testCase.Input.GlueTable, testCase.Input.TableAsset)
+		res := shouldTableBeUpdated(testCase.Input.GlueTable, testCase.Input.TableAsset)
 		if res != testCase.Expect {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}
@@ -1007,7 +903,7 @@ func TestShouldColumnBeUpdated(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := glue.ShouldColumnBeUpdated(testCase.Input.GlueColumn, testCase.Input.TableAsset)
+		res := shouldColumnBeUpdated(testCase.Input.GlueColumn, testCase.Input.TableAsset)
 		if res != testCase.Expect {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}

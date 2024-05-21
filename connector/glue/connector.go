@@ -116,13 +116,13 @@ func (g *GlueConnector) ReflectDatabaseDescToAthena(dbAssets []qdc.Data) error {
 	if err != nil {
 		return err
 	}
-	mapDBAssetByDBName := MapDBAssetByDBName(allGlueDBs)
+	mapDBAssetByDBName := mapDBAssetByDBName(allGlueDBs)
 
 	for _, dbAsset := range dbAssets {
 		if glueDB, ok := mapDBAssetByDBName[dbAsset.PhysicalName]; ok {
-			updateDatabaseInput := GenUpdateDatabaseInput(glueDB)
+			updateDatabaseInput := genUpdateDatabaseInput(glueDB)
 
-			if ShouldDatabaseBeUpdated(glueDB, dbAsset) {
+			if shouldDatabaseBeUpdated(glueDB, dbAsset) {
 				descWithPrefix := utils.AddQDICToStringAsPrefix(dbAsset.Description)
 				updateDatabaseInput.DatabaseInput.Description = &descWithPrefix
 				_, err := g.GlueRepo.UpdateDatabase(updateDatabaseInput, g.AthenaAccountID)
@@ -162,7 +162,7 @@ func (g GlueConnector) GetAllDatabases() ([]types.Database, error) {
 func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) error {
 	for _, tableAsset := range tableAssets {
 		tableShouldBeUpdated := false
-		databaseAsset := GetSpecifiedAssetFromPath(tableAsset, "schema3")
+		databaseAsset := utils.GetSpecifiedAssetFromPath(tableAsset, "schema3")
 
 		glueTable, err := g.GlueRepo.GetTable(g.AthenaAccountID, databaseAsset.Name, tableAsset.PhysicalName)
 		if err != nil {
@@ -175,8 +175,8 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 			}
 			return err
 		}
-		updateTableInput := GenUpdateTableInput(glueTable)
-		if ShouldTableBeUpdated(*glueTable.Table, tableAsset) {
+		updateTableInput := genUpdateTableInput(glueTable)
+		if shouldTableBeUpdated(*glueTable.Table, tableAsset) {
 			descWithPrefix := utils.AddQDICToStringAsPrefix(tableAsset.Description)
 			updateTableInput.TableInput.Description = &descWithPrefix
 			tableShouldBeUpdated = true
@@ -185,7 +185,7 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 		if err != nil {
 			return err
 		}
-		updatedColumns, columnShouldBeUpdated := GetDescUpdatedColumns(glueTable, columnAssets)
+		updatedColumns, columnShouldBeUpdated := getDescUpdatedColumns(glueTable, columnAssets)
 		if columnShouldBeUpdated {
 			updateTableInput.TableInput.StorageDescriptor.Columns = updatedColumns
 		}
@@ -194,7 +194,7 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 			if err != nil {
 				return err
 			}
-			msg := GenUpdateMessage(tableShouldBeUpdated, columnShouldBeUpdated)
+			msg := genUpdateMessage(tableShouldBeUpdated, columnShouldBeUpdated)
 			g.Logger.Debug("Update table. msg: %s table name %s", msg, tableAsset.PhysicalName)
 		}
 		// Todo: validate table def by compare the output and previous version.
@@ -238,10 +238,10 @@ func (g *GlueConnector) ReflectMetadataToDataCatalog() error {
 	return nil
 }
 
-func GetDescUpdatedColumns(glueTable *glueService.GetTableOutput, columnAssets []qdc.Data) ([]types.Column, bool) {
+func getDescUpdatedColumns(glueTable *glueService.GetTableOutput, columnAssets []qdc.Data) ([]types.Column, bool) {
 	var updatedColumns []types.Column
 	shouldBeUpdated := false
-	mapColumnAssetByColumnName := MapColumnAssetByColumnName(columnAssets)
+	mapColumnAssetByColumnName := mapColumnAssetByColumnName(columnAssets)
 	if glueTable.Table.StorageDescriptor == nil {
 		return []types.Column{}, false
 	}
@@ -251,7 +251,7 @@ func GetDescUpdatedColumns(glueTable *glueService.GetTableOutput, columnAssets [
 			columnName = *column.Name
 		}
 		if columnAsset, ok := mapColumnAssetByColumnName[columnName]; ok {
-			if ShouldColumnBeUpdated(column, columnAsset) {
+			if shouldColumnBeUpdated(column, columnAsset) {
 				updatedColumn := column
 				descWithPrefix := utils.AddQDICToStringAsPrefix(columnAsset.Description)
 				updatedColumn.Comment = &descWithPrefix
@@ -267,7 +267,7 @@ func GetDescUpdatedColumns(glueTable *glueService.GetTableOutput, columnAssets [
 	return updatedColumns, shouldBeUpdated
 }
 
-func MapColumnAssetByColumnName(columnAssets []qdc.Data) map[string]qdc.Data {
+func mapColumnAssetByColumnName(columnAssets []qdc.Data) map[string]qdc.Data {
 	mapColumnAssetsByColumnName := make(map[string]qdc.Data)
 	for _, columnAsset := range columnAssets {
 		mapColumnAssetsByColumnName[columnAsset.PhysicalName] = columnAsset
@@ -275,17 +275,7 @@ func MapColumnAssetByColumnName(columnAssets []qdc.Data) map[string]qdc.Data {
 	return mapColumnAssetsByColumnName
 }
 
-func GetSpecifiedAssetFromPath(asset qdc.Data, pathLayer string) qdc.Path {
-	path := asset.Path
-	for _, p := range path {
-		if p.PathLayer == pathLayer {
-			return p
-		}
-	}
-	return qdc.Path{}
-}
-
-func MapDBAssetByDBName(databases []types.Database) map[string]types.Database {
+func mapDBAssetByDBName(databases []types.Database) map[string]types.Database {
 	mapDBAssetByDBName := make(map[string]types.Database)
 	for _, database := range databases {
 		var dbName string
@@ -297,19 +287,7 @@ func MapDBAssetByDBName(databases []types.Database) map[string]types.Database {
 	return mapDBAssetByDBName
 }
 
-func MapTableAssetByTableName(tables []types.Table) map[string]types.Table {
-	mapTableAssetByTableName := make(map[string]types.Table)
-	for _, table := range tables {
-		var tableName string
-		if table.Name != nil {
-			tableName = *table.Name
-		}
-		mapTableAssetByTableName[tableName] = table
-	}
-	return mapTableAssetByTableName
-}
-
-func GenUpdateMessage(tableUpdated, columnUpdated bool) string {
+func genUpdateMessage(tableUpdated, columnUpdated bool) string {
 	var message string
 	switch {
 	case tableUpdated && columnUpdated:
@@ -324,7 +302,7 @@ func GenUpdateMessage(tableUpdated, columnUpdated bool) string {
 	return message
 }
 
-func GenUpdateDatabaseInput(getDatabaseOutput types.Database) glueService.UpdateDatabaseInput {
+func genUpdateDatabaseInput(getDatabaseOutput types.Database) glueService.UpdateDatabaseInput {
 	databaseInput := types.DatabaseInput{}
 	databaseInputValueOf := reflect.ValueOf(&databaseInput).Elem()
 	databaseInputTypeOf := reflect.TypeOf(databaseInput)
@@ -346,7 +324,7 @@ func GenUpdateDatabaseInput(getDatabaseOutput types.Database) glueService.Update
 	return updateTableInput
 }
 
-func GenUpdateTableInput(getTableOutput *glueService.GetTableOutput) glueService.UpdateTableInput {
+func genUpdateTableInput(getTableOutput *glueService.GetTableOutput) glueService.UpdateTableInput {
 	tableInput := types.TableInput{}
 	tableInputValueOf := reflect.ValueOf(&tableInput).Elem()
 	tableInputTypeOf := reflect.TypeOf(tableInput)
@@ -368,21 +346,21 @@ func GenUpdateTableInput(getTableOutput *glueService.GetTableOutput) glueService
 	return updateTableInput
 }
 
-func ShouldDatabaseBeUpdated(glueDB types.Database, dbAsset qdc.Data) bool {
+func shouldDatabaseBeUpdated(glueDB types.Database, dbAsset qdc.Data) bool {
 	if (glueDB.Description == nil || *glueDB.Description == "") && dbAsset.Description != "" {
 		return true
 	}
 	return false
 }
 
-func ShouldTableBeUpdated(glueTable types.Table, tableAsset qdc.Data) bool {
+func shouldTableBeUpdated(glueTable types.Table, tableAsset qdc.Data) bool {
 	if (glueTable.Description == nil || *glueTable.Description == "") && tableAsset.Description != "" {
 		return true
 	}
 	return false
 }
 
-func ShouldColumnBeUpdated(glueColumn types.Column, columnAsset qdc.Data) bool {
+func shouldColumnBeUpdated(glueColumn types.Column, columnAsset qdc.Data) bool {
 	if (glueColumn.Comment == nil || *glueColumn.Comment == "") && columnAsset.Description != "" {
 		return true
 	}
