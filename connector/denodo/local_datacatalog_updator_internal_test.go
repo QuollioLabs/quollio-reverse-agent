@@ -12,15 +12,17 @@ import (
 func TestShouldUpdateDonodoLocalDatabase(t *testing.T) {
 	testCases := []struct {
 		Input struct {
-			LocalAsset models.Database
-			QdcDBAsset qdc.Data
+			LocalAsset    models.Database
+			QdcDBAsset    qdc.Data
+			OverwriteMode string
 		}
 		Expect bool
 	}{
 		{
 			Input: struct {
-				LocalAsset models.Database
-				QdcDBAsset qdc.Data
+				LocalAsset    models.Database
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.Database{
 					DatabaseName:        "test-db1",
@@ -30,13 +32,15 @@ func TestShouldUpdateDonodoLocalDatabase(t *testing.T) {
 					PhysicalName: "test-db1",
 					Description:  "test-db1",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				LocalAsset models.Database
-				QdcDBAsset qdc.Data
+				LocalAsset    models.Database
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.Database{
 					DatabaseName:        "test-db2",
@@ -46,13 +50,15 @@ func TestShouldUpdateDonodoLocalDatabase(t *testing.T) {
 					PhysicalName: "test-db2",
 					Description:  "test-db2",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: true,
 		},
 		{
 			Input: struct {
-				LocalAsset models.Database
-				QdcDBAsset qdc.Data
+				LocalAsset    models.Database
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.Database{
 					DatabaseName:        "test-db3",
@@ -62,13 +68,15 @@ func TestShouldUpdateDonodoLocalDatabase(t *testing.T) {
 					PhysicalName: "test-db3",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				LocalAsset models.Database
-				QdcDBAsset qdc.Data
+				LocalAsset    models.Database
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.Database{
 					DatabaseName:        "test-db4",
@@ -78,12 +86,13 @@ func TestShouldUpdateDonodoLocalDatabase(t *testing.T) {
 					PhysicalName: "test-db4",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldUpdateDenodoLocalDatabase(utils.OverwriteIfEmpty, testCase.Input.LocalAsset, testCase.Input.QdcDBAsset)
+		res := shouldUpdateDenodoLocalDatabase(testCase.Input.OverwriteMode, testCase.Input.LocalAsset, testCase.Input.QdcDBAsset)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %v. Name: %s", testCase.Expect, res, testCase.Input.LocalAsset.DatabaseName)
 		}
@@ -95,6 +104,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 		Input struct {
 			LocalAsset    models.ViewDetail
 			QdcTableAsset qdc.Data
+			OverwriteMode string
 		}
 		Expect bool
 	}{
@@ -102,6 +112,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 			Input: struct {
 				LocalAsset    models.ViewDetail
 				QdcTableAsset qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.ViewDetail{
 					Name:        "test-view1",
@@ -112,6 +123,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 					PhysicalName: "test-table1",
 					Description:  "test-table1",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
@@ -119,6 +131,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 			Input: struct {
 				LocalAsset    models.ViewDetail
 				QdcTableAsset qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.ViewDetail{
 					Name:        "test-table2",
@@ -129,6 +142,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 					PhysicalName: "test-table2",
 					Description:  "test-table2",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: true,
 		},
@@ -136,6 +150,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 			Input: struct {
 				LocalAsset    models.ViewDetail
 				QdcTableAsset qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.ViewDetail{
 					Name:        "test-table3",
@@ -146,6 +161,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 					PhysicalName: "test-table3",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
@@ -153,6 +169,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 			Input: struct {
 				LocalAsset    models.ViewDetail
 				QdcTableAsset qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.ViewDetail{
 					Name:        "test-table4",
@@ -163,6 +180,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 					PhysicalName: "test-table4",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
@@ -170,6 +188,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 			Input: struct {
 				LocalAsset    models.ViewDetail
 				QdcTableAsset qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.ViewDetail{
 					Name:        "test-table2",
@@ -180,12 +199,13 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 					PhysicalName: "test-table2",
 					Description:  "test-table2",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldUpdateDenodoLocalTable(utils.OverwriteIfEmpty, testCase.Input.LocalAsset, testCase.Input.QdcTableAsset)
+		res := shouldUpdateDenodoLocalTable(testCase.Input.OverwriteMode, testCase.Input.LocalAsset, testCase.Input.QdcTableAsset)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %v. Name: %s", testCase.Expect, res, testCase.Input.LocalAsset.Name)
 		}
@@ -197,6 +217,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 		Input struct {
 			LocalAsset    models.ViewColumn
 			QdcTableAsset qdc.Data
+			OverwriteMode string
 		}
 		Expect bool
 	}{
@@ -204,6 +225,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 			Input: struct {
 				LocalAsset    models.ViewColumn
 				QdcTableAsset qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.ViewColumn{
 					Name:        "test-col1",
@@ -214,6 +236,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 					PhysicalName: "test-col1",
 					Description:  "test-col1",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
@@ -221,6 +244,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 			Input: struct {
 				LocalAsset    models.ViewColumn
 				QdcTableAsset qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.ViewColumn{
 					Name:        "test-col2",
@@ -231,6 +255,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 					PhysicalName: "test-col2",
 					Description:  "test-col2",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: true,
 		},
@@ -238,6 +263,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 			Input: struct {
 				LocalAsset    models.ViewColumn
 				QdcTableAsset qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.ViewColumn{
 					Name:        "test-col3",
@@ -248,6 +274,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 					PhysicalName: "test-col3",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
@@ -255,6 +282,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 			Input: struct {
 				LocalAsset    models.ViewColumn
 				QdcTableAsset qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.ViewColumn{
 					Name:        "test-col4",
@@ -265,6 +293,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 					PhysicalName: "test-col4",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
@@ -272,6 +301,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 			Input: struct {
 				LocalAsset    models.ViewColumn
 				QdcTableAsset qdc.Data
+				OverwriteMode string
 			}{
 				LocalAsset: models.ViewColumn{
 					Name:        "test-col2",
@@ -282,12 +312,13 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 					PhysicalName: "test-col2",
 					Description:  "test-col2",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldUpdateDenodoLocalColumn(utils.OverwriteIfEmpty, testCase.Input.LocalAsset, testCase.Input.QdcTableAsset)
+		res := shouldUpdateDenodoLocalColumn(testCase.Input.OverwriteMode, testCase.Input.LocalAsset, testCase.Input.QdcTableAsset)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %v. Name: %s", testCase.Expect, res, testCase.Input.LocalAsset.Name)
 		}

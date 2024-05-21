@@ -707,6 +707,132 @@ func TestShouldDatabaseBeUpdated(t *testing.T) {
 			},
 			Expect: true,
 		},
+		{
+			Input: struct {
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db8"),
+					Description: nil,
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db8",
+					Description:  "test qdc",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db9"),
+					Description: genStringPointer(""),
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db9",
+					Description:  "test qdc",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db10"),
+					Description: nil,
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db10",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db11"),
+					Description: genStringPointer(""),
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db11",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db12"),
+					Description: genStringPointer("test on console"),
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db12",
+					Description:  "test qdc",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db13"),
+					Description: genStringPointer("test on console"),
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db6",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db14"),
+					Description: genStringPointer("【QDIC】test on console"),
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db7",
+					Description:  "test from qdc",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
 	}
 	for _, testCase := range testCases {
 		res := shouldDatabaseBeUpdated(testCase.Input.OverwriteMode, testCase.Input.GlueDB, testCase.Input.DBAsset)
@@ -851,6 +977,132 @@ func TestShouldTableBeUpdated(t *testing.T) {
 			},
 			Expect: true,
 		},
+		{
+			Input: struct {
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: nil,
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "test qdc",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: genStringPointer(""),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "test qdc",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: nil,
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: genStringPointer(""),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: genStringPointer("test on console"),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "test qdc",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: genStringPointer("test on console"),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: genStringPointer("【QDIC】test on console"),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "test from qdc",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
 	}
 	for _, testCase := range testCases {
 		res := shouldTableBeUpdated(testCase.Input.OverwriteMode, &testCase.Input.GlueTable, testCase.Input.TableAsset)
@@ -992,6 +1244,132 @@ func TestShouldColumnBeUpdated(t *testing.T) {
 					Description:  "test from qdc",
 				},
 				OverwriteMode: utils.OverwriteIfEmpty,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: nil,
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "test qdc",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: genStringPointer(""),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "test qdc",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: nil,
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: genStringPointer(""),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: genStringPointer("test on console"),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "test qdc",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: genStringPointer("test on console"),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: genStringPointer("【QDIC】test on console"),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "test from qdc",
+				},
+				OverwriteMode: utils.OverwriteAll,
 			},
 			Expect: true,
 		},

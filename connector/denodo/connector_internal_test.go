@@ -305,6 +305,132 @@ func TestShouldUpdateDenodoVdpDatabase(t *testing.T) {
 			},
 			Expect: false,
 		},
+		{
+			Input: struct {
+				VdpAsset      models.GetDatabasesResult
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetDatabasesResult{
+					DatabaseName: "test-db1",
+					Description: sql.NullString{
+						Valid:  true,
+						String: "test-db1",
+					},
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-db1",
+					Description:  "test-db1",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetDatabasesResult
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetDatabasesResult{
+					DatabaseName: "test-db2",
+					Description: sql.NullString{
+						Valid:  false,
+						String: "",
+					},
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-db2",
+					Description:  "test-db2",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetDatabasesResult
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetDatabasesResult{
+					DatabaseName: "test-db3",
+					Description: sql.NullString{
+						Valid:  true,
+						String: "test-db3",
+					},
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-db3",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetDatabasesResult
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetDatabasesResult{
+					DatabaseName: "test-db4",
+					Description: sql.NullString{
+						Valid:  false,
+						String: "",
+					},
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-db4",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetDatabasesResult
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetDatabasesResult{
+					DatabaseName: "test-db5",
+					Description: sql.NullString{
+						Valid:  true,
+						String: "【QDIC】test",
+					},
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-db5",
+					Description:  "【QDIC】test1",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetDatabasesResult
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetDatabasesResult{
+					DatabaseName: "test-db6",
+					Description: sql.NullString{
+						Valid:  true,
+						String: "test【QDIC】",
+					},
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-db6",
+					Description:  "【QDIC】test1",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
 	}
 	for _, testCase := range testCases {
 		res := shouldUpdateDenodoVdpDatabase(testCase.Input.OverwriteMode, testCase.Input.VdpAsset, testCase.Input.QdcDBAsset)
@@ -449,6 +575,132 @@ func TestShouldUpdateDenodoVdpTable(t *testing.T) {
 			},
 			Expect: false,
 		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewsResult
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetViewsResult{
+					ViewName: "test-view1",
+					Description: sql.NullString{
+						Valid:  true,
+						String: "test-view1",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "test-table1",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewsResult
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetViewsResult{
+					ViewName: "test-table2",
+					Description: sql.NullString{
+						Valid:  false,
+						String: "",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table2",
+					Description:  "test-table2",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewsResult
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetViewsResult{
+					ViewName: "test-table3",
+					Description: sql.NullString{
+						Valid:  true,
+						String: "test-table3",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table3",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewsResult
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetViewsResult{
+					ViewName: "test-table4",
+					Description: sql.NullString{
+						Valid:  false,
+						String: "",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table4",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewsResult
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetViewsResult{
+					ViewName: "test-table5",
+					Description: sql.NullString{
+						Valid:  true,
+						String: "【QDIC】test5",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table5",
+					Description:  "【QDIC】test5",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewsResult
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetViewsResult{
+					ViewName: "test-table6",
+					Description: sql.NullString{
+						Valid:  true,
+						String: "test6【QDIC】",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table6",
+					Description:  "【QDIC】test6",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
 	}
 	for _, testCase := range testCases {
 		res := shouldUpdateDenodoVdpTable(testCase.Input.OverwriteMode, testCase.Input.VdpAsset, testCase.Input.QdcTableAsset)
@@ -592,6 +844,132 @@ func TestShouldUpdateDenodoVdpColumn(t *testing.T) {
 				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewColumnsResult
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetViewColumnsResult{
+					ColumnName: "test-col1",
+					ColumnRemarks: sql.NullString{
+						Valid:  false,
+						String: "",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col1",
+					Description:  "test-col1",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewColumnsResult
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetViewColumnsResult{
+					ColumnName: "test-col2",
+					ColumnRemarks: sql.NullString{
+						Valid:  true,
+						String: "test-col2",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col2",
+					Description:  "test-col2",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewColumnsResult
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetViewColumnsResult{
+					ColumnName: "test-col3",
+					ColumnRemarks: sql.NullString{
+						Valid:  true,
+						String: "test-col3",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col3",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewColumnsResult
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetViewColumnsResult{
+					ColumnName: "test-col4",
+					ColumnRemarks: sql.NullString{
+						Valid:  false,
+						String: "",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col4",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewColumnsResult
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetViewColumnsResult{
+					ColumnName: "test-col5",
+					ColumnRemarks: sql.NullString{
+						Valid:  true,
+						String: "【QDIC】test5",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col5",
+					Description:  "【QDIC】test5",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				VdpAsset      models.GetViewColumnsResult
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				VdpAsset: models.GetViewColumnsResult{
+					ColumnName: "test-col6",
+					ColumnRemarks: sql.NullString{
+						Valid:  true,
+						String: "test6【QDIC】",
+					},
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col6",
+					Description:  "【QDIC】test6",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
 		},
 	}
 	for _, testCase := range testCases {
