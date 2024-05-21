@@ -350,6 +350,10 @@ func genUpdateTableInput(getTableOutput *glueService.GetTableOutput) glueService
 }
 
 func shouldDatabaseBeUpdated(overwriteMode string, glueDB types.Database, dbAsset qdc.Data) bool {
+	if overwriteMode == utils.OverwriteAll && dbAsset.Description != "" {
+		return true
+	}
+
 	if (glueDB.Description == nil || *glueDB.Description == "") && dbAsset.Description != "" {
 		return true
 	}
@@ -363,6 +367,10 @@ func shouldTableBeUpdated(overwriteMode string, glueTable *types.Table, tableAss
 	if glueTable == nil {
 		return false
 	}
+	if overwriteMode == utils.OverwriteAll && tableAsset.Description != "" {
+		return true
+	}
+
 	if (glueTable.Description == nil || *glueTable.Description == "") && tableAsset.Description != "" {
 		return true
 	}
@@ -373,6 +381,10 @@ func shouldTableBeUpdated(overwriteMode string, glueTable *types.Table, tableAss
 }
 
 func shouldColumnBeUpdated(overwriteMode string, glueColumn types.Column, columnAsset qdc.Data) bool {
+	if overwriteMode == utils.OverwriteAll && columnAsset.Description != "" {
+		return true
+	}
+
 	if (glueColumn.Comment == nil || *glueColumn.Comment == "") && columnAsset.Description != "" {
 		return true
 	}

@@ -108,6 +108,10 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 }
 
 func shouldUpdateDenodoLocalDatabase(overwriteMode string, db models.Database, qdcDatabase qdc.Data) bool {
+	if overwriteMode == utils.OverwriteAll && qdcDatabase.Description != "" {
+		return true
+	}
+
 	if db.DatabaseDescription == "" && qdcDatabase.Description != "" {
 		return true
 	}
@@ -116,6 +120,10 @@ func shouldUpdateDenodoLocalDatabase(overwriteMode string, db models.Database, q
 }
 
 func shouldUpdateDenodoLocalTable(overwriteMode string, view models.ViewDetail, qdcTable qdc.Data) bool {
+	if view.InLocal && overwriteMode == utils.OverwriteAll && qdcTable.Description != "" {
+		return true
+	}
+
 	if view.InLocal && view.Description == "" && qdcTable.Description != "" {
 		return true
 	}
@@ -124,6 +132,10 @@ func shouldUpdateDenodoLocalTable(overwriteMode string, view models.ViewDetail, 
 }
 
 func shouldUpdateDenodoLocalColumn(overwriteMode string, viewColumn models.ViewColumn, qdcColumn qdc.Data) bool {
+	if viewColumn.InLocal && overwriteMode == utils.OverwriteAll && qdcColumn.Description != "" {
+		return true
+	}
+
 	if viewColumn.InLocal && viewColumn.Description == "" && qdcColumn.Description != "" {
 		return true
 	}

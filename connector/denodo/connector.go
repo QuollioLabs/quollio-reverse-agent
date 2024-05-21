@@ -266,6 +266,9 @@ func convertQdcAssetListToMap(qdcAssetList []qdc.Data) map[string]qdc.Data {
 }
 
 func shouldUpdateDenodoVdpDatabase(overwriteMode string, db models.GetDatabasesResult, qdcDatabase qdc.Data) bool {
+	if overwriteMode == utils.OverwriteAll && qdcDatabase.Description != "" {
+		return true
+	}
 	if !db.Description.Valid && qdcDatabase.Description != "" {
 		return true
 	}
@@ -279,6 +282,9 @@ func shouldUpdateDenodoVdpDatabase(overwriteMode string, db models.GetDatabasesR
 }
 
 func shouldUpdateDenodoVdpTable(overwriteMode string, view models.GetViewsResult, qdcTable qdc.Data) bool {
+	if overwriteMode == utils.OverwriteAll && qdcTable.Description != "" {
+		return true
+	}
 	if !view.Description.Valid && qdcTable.Description != "" {
 		return true
 	}
@@ -292,6 +298,9 @@ func shouldUpdateDenodoVdpTable(overwriteMode string, view models.GetViewsResult
 }
 
 func shouldUpdateDenodoVdpColumn(overwriteMode string, viewColumn models.GetViewColumnsResult, qdcColumn qdc.Data) bool {
+	if overwriteMode == utils.OverwriteAll && qdcColumn.Description != "" {
+		return true
+	}
 	if !viewColumn.ColumnRemarks.Valid && qdcColumn.Description != "" {
 		return true
 	}

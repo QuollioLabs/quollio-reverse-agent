@@ -575,15 +575,17 @@ func TestGenUpdateTableInput(t *testing.T) {
 func TestShouldDatabaseBeUpdated(t *testing.T) {
 	testCases := []struct {
 		Input struct {
-			GlueDB  types.Database
-			DBAsset qdc.Data
+			GlueDB        types.Database
+			DBAsset       qdc.Data
+			OverwriteMode string
 		}
 		Expect bool
 	}{
 		{
 			Input: struct {
-				GlueDB  types.Database
-				DBAsset qdc.Data
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
 			}{
 				GlueDB: types.Database{
 					Name:        genStringPointer("test-db1"),
@@ -593,108 +595,121 @@ func TestShouldDatabaseBeUpdated(t *testing.T) {
 					PhysicalName: "test-db1",
 					Description:  "test qdc",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: true,
 		},
 		{
 			Input: struct {
-				GlueDB  types.Database
-				DBAsset qdc.Data
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
 			}{
 				GlueDB: types.Database{
-					Name:        genStringPointer("test-db1"),
+					Name:        genStringPointer("test-db2"),
 					Description: genStringPointer(""),
 				},
 				DBAsset: qdc.Data{
-					PhysicalName: "test-db1",
+					PhysicalName: "test-db2",
 					Description:  "test qdc",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: true,
 		},
 		{
 			Input: struct {
-				GlueDB  types.Database
-				DBAsset qdc.Data
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
 			}{
 				GlueDB: types.Database{
-					Name:        genStringPointer("test-db1"),
+					Name:        genStringPointer("test-db3"),
 					Description: nil,
 				},
 				DBAsset: qdc.Data{
-					PhysicalName: "test-db1",
+					PhysicalName: "test-db3",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				GlueDB  types.Database
-				DBAsset qdc.Data
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
 			}{
 				GlueDB: types.Database{
-					Name:        genStringPointer("test-db1"),
+					Name:        genStringPointer("test-db4"),
 					Description: genStringPointer(""),
 				},
 				DBAsset: qdc.Data{
-					PhysicalName: "test-db1",
+					PhysicalName: "test-db4",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				GlueDB  types.Database
-				DBAsset qdc.Data
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
 			}{
 				GlueDB: types.Database{
-					Name:        genStringPointer("test-db1"),
+					Name:        genStringPointer("test-db5"),
 					Description: genStringPointer("test on console"),
 				},
 				DBAsset: qdc.Data{
-					PhysicalName: "test-db1",
+					PhysicalName: "test-db5",
 					Description:  "test qdc",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				GlueDB  types.Database
-				DBAsset qdc.Data
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
 			}{
 				GlueDB: types.Database{
-					Name:        genStringPointer("test-db1"),
+					Name:        genStringPointer("test-db6"),
 					Description: genStringPointer("test on console"),
 				},
 				DBAsset: qdc.Data{
-					PhysicalName: "test-db1",
+					PhysicalName: "test-db6",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				GlueDB  types.Database
-				DBAsset qdc.Data
+				GlueDB        types.Database
+				DBAsset       qdc.Data
+				OverwriteMode string
 			}{
 				GlueDB: types.Database{
-					Name:        genStringPointer("test-db1"),
+					Name:        genStringPointer("test-db7"),
 					Description: genStringPointer("【QDIC】test on console"),
 				},
 				DBAsset: qdc.Data{
-					PhysicalName: "test-db1",
+					PhysicalName: "test-db7",
 					Description:  "test from qdc",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: true,
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldDatabaseBeUpdated(utils.OverwriteIfEmpty, testCase.Input.GlueDB, testCase.Input.DBAsset)
+		res := shouldDatabaseBeUpdated(testCase.Input.OverwriteMode, testCase.Input.GlueDB, testCase.Input.DBAsset)
 		if res != testCase.Expect {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}
@@ -704,15 +719,17 @@ func TestShouldDatabaseBeUpdated(t *testing.T) {
 func TestShouldTableBeUpdated(t *testing.T) {
 	testCases := []struct {
 		Input struct {
-			GlueTable  types.Table
-			TableAsset qdc.Data
+			GlueTable     types.Table
+			TableAsset    qdc.Data
+			OverwriteMode string
 		}
 		Expect bool
 	}{
 		{
 			Input: struct {
-				GlueTable  types.Table
-				TableAsset qdc.Data
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueTable: types.Table{
 					Name:        genStringPointer("test-table1"),
@@ -722,13 +739,15 @@ func TestShouldTableBeUpdated(t *testing.T) {
 					PhysicalName: "test-table1",
 					Description:  "test qdc",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: true,
 		},
 		{
 			Input: struct {
-				GlueTable  types.Table
-				TableAsset qdc.Data
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueTable: types.Table{
 					Name:        genStringPointer("test-table1"),
@@ -738,13 +757,15 @@ func TestShouldTableBeUpdated(t *testing.T) {
 					PhysicalName: "test-table1",
 					Description:  "test qdc",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: true,
 		},
 		{
 			Input: struct {
-				GlueTable  types.Table
-				TableAsset qdc.Data
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueTable: types.Table{
 					Name:        genStringPointer("test-table1"),
@@ -754,13 +775,15 @@ func TestShouldTableBeUpdated(t *testing.T) {
 					PhysicalName: "test-table1",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				GlueTable  types.Table
-				TableAsset qdc.Data
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueTable: types.Table{
 					Name:        genStringPointer("test-table1"),
@@ -770,13 +793,15 @@ func TestShouldTableBeUpdated(t *testing.T) {
 					PhysicalName: "test-table1",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				GlueTable  types.Table
-				TableAsset qdc.Data
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueTable: types.Table{
 					Name:        genStringPointer("test-table1"),
@@ -786,13 +811,15 @@ func TestShouldTableBeUpdated(t *testing.T) {
 					PhysicalName: "test-table1",
 					Description:  "test qdc",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				GlueTable  types.Table
-				TableAsset qdc.Data
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueTable: types.Table{
 					Name:        genStringPointer("test-table1"),
@@ -802,13 +829,15 @@ func TestShouldTableBeUpdated(t *testing.T) {
 					PhysicalName: "test-table1",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				GlueTable  types.Table
-				TableAsset qdc.Data
+				GlueTable     types.Table
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueTable: types.Table{
 					Name:        genStringPointer("test-table1"),
@@ -818,12 +847,13 @@ func TestShouldTableBeUpdated(t *testing.T) {
 					PhysicalName: "test-table1",
 					Description:  "test from qdc",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: true,
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldTableBeUpdated(utils.OverwriteIfEmpty, &testCase.Input.GlueTable, testCase.Input.TableAsset)
+		res := shouldTableBeUpdated(testCase.Input.OverwriteMode, &testCase.Input.GlueTable, testCase.Input.TableAsset)
 		if res != testCase.Expect {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}
@@ -833,15 +863,17 @@ func TestShouldTableBeUpdated(t *testing.T) {
 func TestShouldColumnBeUpdated(t *testing.T) {
 	testCases := []struct {
 		Input struct {
-			GlueColumn types.Column
-			TableAsset qdc.Data
+			GlueColumn    types.Column
+			TableAsset    qdc.Data
+			OverwriteMode string
 		}
 		Expect bool
 	}{
 		{
 			Input: struct {
-				GlueColumn types.Column
-				TableAsset qdc.Data
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueColumn: types.Column{
 					Name:    genStringPointer("test-column1"),
@@ -851,13 +883,15 @@ func TestShouldColumnBeUpdated(t *testing.T) {
 					PhysicalName: "test-column1",
 					Description:  "test qdc",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: true,
 		},
 		{
 			Input: struct {
-				GlueColumn types.Column
-				TableAsset qdc.Data
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueColumn: types.Column{
 					Name:    genStringPointer("test-column1"),
@@ -867,13 +901,15 @@ func TestShouldColumnBeUpdated(t *testing.T) {
 					PhysicalName: "test-column1",
 					Description:  "test qdc",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: true,
 		},
 		{
 			Input: struct {
-				GlueColumn types.Column
-				TableAsset qdc.Data
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueColumn: types.Column{
 					Name:    genStringPointer("test-column1"),
@@ -883,13 +919,15 @@ func TestShouldColumnBeUpdated(t *testing.T) {
 					PhysicalName: "test-column1",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				GlueColumn types.Column
-				TableAsset qdc.Data
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueColumn: types.Column{
 					Name:    genStringPointer("test-column1"),
@@ -899,13 +937,15 @@ func TestShouldColumnBeUpdated(t *testing.T) {
 					PhysicalName: "test-column1",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				GlueColumn types.Column
-				TableAsset qdc.Data
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueColumn: types.Column{
 					Name:    genStringPointer("test-column1"),
@@ -915,13 +955,15 @@ func TestShouldColumnBeUpdated(t *testing.T) {
 					PhysicalName: "test-column1",
 					Description:  "test qdc",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				GlueColumn types.Column
-				TableAsset qdc.Data
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueColumn: types.Column{
 					Name:    genStringPointer("test-column1"),
@@ -931,13 +973,15 @@ func TestShouldColumnBeUpdated(t *testing.T) {
 					PhysicalName: "test-column1",
 					Description:  "",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: false,
 		},
 		{
 			Input: struct {
-				GlueColumn types.Column
-				TableAsset qdc.Data
+				GlueColumn    types.Column
+				TableAsset    qdc.Data
+				OverwriteMode string
 			}{
 				GlueColumn: types.Column{
 					Name:    genStringPointer("test-column1"),
@@ -947,12 +991,13 @@ func TestShouldColumnBeUpdated(t *testing.T) {
 					PhysicalName: "test-column1",
 					Description:  "test from qdc",
 				},
+				OverwriteMode: utils.OverwriteIfEmpty,
 			},
 			Expect: true,
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldColumnBeUpdated(utils.OverwriteIfEmpty, testCase.Input.GlueColumn, testCase.Input.TableAsset)
+		res := shouldColumnBeUpdated(testCase.Input.OverwriteMode, testCase.Input.GlueColumn, testCase.Input.TableAsset)
 		if res != testCase.Expect {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}
