@@ -279,7 +279,7 @@ func TestGetDescUpdatedColumns(t *testing.T) {
 					},
 					{
 						Name:    genStringPointer("test-column2"),
-						Comment: genStringPointer("test-column-comment-qdc2"),
+						Comment: genStringPointer("【QDIC】test-column-comment-qdc2"),
 					},
 					{
 						Name:    genStringPointer("test-column3"),
