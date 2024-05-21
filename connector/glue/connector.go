@@ -4,10 +4,10 @@ import (
 	"errors"
 	"os"
 	"quollio-reverse-agent/common/logger"
+	"quollio-reverse-agent/common/utils"
 	"quollio-reverse-agent/repository/glue"
 	"quollio-reverse-agent/repository/glue/code"
 	"quollio-reverse-agent/repository/qdc"
-	"quollio-reverse-agent/utils"
 	"reflect"
 
 	glueService "github.com/aws/aws-sdk-go-v2/service/glue"
@@ -123,7 +123,8 @@ func (g *GlueConnector) ReflectDatabaseDescToAthena(dbAssets []qdc.Data) error {
 			updateDatabaseInput := GenUpdateDatabaseInput(glueDB)
 
 			if ShouldDatabaseBeUpdated(glueDB, dbAsset) {
-				updateDatabaseInput.DatabaseInput.Description = &dbAsset.Description
+				descWithPrefix := utils.AddQDICToStringAsPrefix(dbAsset.Description)
+				updateDatabaseInput.DatabaseInput.Description = &descWithPrefix
 				_, err := g.GlueRepo.UpdateDatabase(updateDatabaseInput, g.AthenaAccountID)
 				if err != nil {
 					var ge *code.GlueError
@@ -176,7 +177,8 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 		}
 		updateTableInput := GenUpdateTableInput(glueTable)
 		if ShouldTableBeUpdated(*glueTable.Table, tableAsset) {
-			updateTableInput.TableInput.Description = &tableAsset.Description
+			descWithPrefix := utils.AddQDICToStringAsPrefix(tableAsset.Description)
+			updateTableInput.TableInput.Description = &descWithPrefix
 			tableShouldBeUpdated = true
 		}
 		columnAssets, err := g.GetChildAssetsByParentAsset(tableAsset)
@@ -251,7 +253,8 @@ func GetDescUpdatedColumns(glueTable *glueService.GetTableOutput, columnAssets [
 		if columnAsset, ok := mapColumnAssetByColumnName[columnName]; ok {
 			if ShouldColumnBeUpdated(column, columnAsset) {
 				updatedColumn := column
-				updatedColumn.Comment = &columnAsset.Description
+				descWithPrefix := utils.AddQDICToStringAsPrefix(columnAsset.Description)
+				updatedColumn.Comment = &descWithPrefix
 				updatedColumns = append(updatedColumns, updatedColumn)
 				shouldBeUpdated = true
 			} else {
