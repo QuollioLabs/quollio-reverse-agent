@@ -90,6 +90,78 @@ func TestShouldUpdateDonodoLocalDatabase(t *testing.T) {
 			},
 			Expect: false,
 		},
+		{
+			Input: struct {
+				LocalAsset    models.Database
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.Database{
+					DatabaseName:        "test-db1",
+					DatabaseDescription: "test-db1-desc",
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-db1",
+					Description:  "test-db1",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.Database
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.Database{
+					DatabaseName:        "test-db2",
+					DatabaseDescription: "",
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-db2",
+					Description:  "test-db2",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.Database
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.Database{
+					DatabaseName:        "test-db3",
+					DatabaseDescription: "test-db3",
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-db3",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.Database
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.Database{
+					DatabaseName:        "test-db4",
+					DatabaseDescription: "",
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-db4",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
 	}
 	for _, testCase := range testCases {
 		res := shouldUpdateDenodoLocalDatabase(testCase.Input.OverwriteMode, testCase.Input.LocalAsset, testCase.Input.QdcDBAsset)
@@ -203,6 +275,101 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 			},
 			Expect: false,
 		},
+		{
+			Input: struct {
+				LocalAsset    models.ViewDetail
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.ViewDetail{
+					Name:        "test-view1",
+					Description: "test-view1-desc",
+					InLocal:     true,
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "test-table1",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.ViewDetail
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.ViewDetail{
+					Name:        "test-table2",
+					Description: "",
+					InLocal:     true,
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table2",
+					Description:  "test-table2",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.ViewDetail
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.ViewDetail{
+					Name:        "test-table3",
+					Description: "test-table3",
+					InLocal:     true,
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table3",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.ViewDetail
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.ViewDetail{
+					Name:        "test-table4",
+					Description: "",
+					InLocal:     true,
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table4",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.ViewDetail
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.ViewDetail{
+					Name:        "test-table2",
+					Description: "",
+					InLocal:     false,
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-table2",
+					Description:  "test-table2",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
 	}
 	for _, testCase := range testCases {
 		res := shouldUpdateDenodoLocalTable(testCase.Input.OverwriteMode, testCase.Input.LocalAsset, testCase.Input.QdcTableAsset)
@@ -313,6 +480,101 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 					Description:  "test-col2",
 				},
 				OverwriteMode: utils.OverwriteIfEmpty,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.ViewColumn
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.ViewColumn{
+					Name:        "test-col1",
+					Description: "test-col1-desc",
+					InLocal:     true,
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col1",
+					Description:  "test-col1",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.ViewColumn
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.ViewColumn{
+					Name:        "test-col2",
+					Description: "",
+					InLocal:     true,
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col2",
+					Description:  "test-col2",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.ViewColumn
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.ViewColumn{
+					Name:        "test-col3",
+					Description: "test-col3",
+					InLocal:     true,
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col3",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.ViewColumn
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.ViewColumn{
+					Name:        "test-col4",
+					Description: "",
+					InLocal:     true,
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col4",
+					Description:  "",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: false,
+		},
+		{
+			Input: struct {
+				LocalAsset    models.ViewColumn
+				QdcTableAsset qdc.Data
+				OverwriteMode string
+			}{
+				LocalAsset: models.ViewColumn{
+					Name:        "test-col2",
+					Description: "",
+					InLocal:     false,
+				},
+				QdcTableAsset: qdc.Data{
+					PhysicalName: "test-col2",
+					Description:  "test-col2",
+				},
+				OverwriteMode: utils.OverwriteAll,
 			},
 			Expect: false,
 		},
