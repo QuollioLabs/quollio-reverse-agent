@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 	"quollio-reverse-agent/common/logger"
+	"quollio-reverse-agent/common/utils"
 	"quollio-reverse-agent/repository/bigquery"
 	"quollio-reverse-agent/repository/dataplex"
 	"quollio-reverse-agent/repository/qdc"
-	"quollio-reverse-agent/utils"
 
 	bq "cloud.google.com/go/bigquery"
 )
@@ -119,7 +119,8 @@ func (b *BigQueryConnector) ReflectDatasetDescToBigQuery(schemaAssets []qdc.Data
 			return err
 		}
 		if datasetMetadata.Description == "" && schemaAsset.Description != "" {
-			_, err = b.BigQueryRepo.UpdateDatasetDescription(schemaAsset.PhysicalName, schemaAsset.Description)
+			descWithPrefix := utils.AddQDICToStringAsPrefix(schemaAsset.Description)
+			_, err = b.BigQueryRepo.UpdateDatasetDescription(schemaAsset.PhysicalName, descWithPrefix)
 			if err != nil {
 				b.Logger.Error("The update was failed.: %s", schemaAsset.PhysicalName)
 				return err
@@ -169,7 +170,8 @@ func (b *BigQueryConnector) ReflectTableAttributeToBigQuery(tableAssets []qdc.Da
 		}
 		if tableAssetEntry.BusinessContext.EntryOverview.Overview == "" && tableAsset.Description != "" {
 			b.Logger.Debug("The overview of table asset will be updated.: %s", tableAsset.PhysicalName)
-			_, err := b.DataplexRepo.ModifyEntryOverview(tableAssetEntry.Name, tableAsset.Description)
+			descWithPrefix := utils.AddQDICToStringAsPrefix(tableAsset.Description)
+			_, err := b.DataplexRepo.ModifyEntryOverview(tableAssetEntry.Name, descWithPrefix)
 			if err != nil {
 				b.Logger.Error("The update for the overview of the table asset was failed.: %s", tableAsset.PhysicalName)
 				return err
@@ -242,7 +244,8 @@ func GetDescUpdatedSchema(columnAssets []qdc.Data, tableMetadata *bq.TableMetada
 		newSchemaField := schemaField // copy
 		if columnAsset, ok := mapColumnAssetByColumnName[newSchemaField.Name]; ok {
 			if newSchemaField.Description == "" && columnAsset.Description != "" {
-				newSchemaField.Description = columnAsset.Description
+				descWithPrefix := utils.AddQDICToStringAsPrefix(columnAsset.Description)
+				newSchemaField.Description = descWithPrefix
 				shouldSchemaUpdated = true
 			}
 		}

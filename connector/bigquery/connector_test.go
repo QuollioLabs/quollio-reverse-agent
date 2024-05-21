@@ -420,7 +420,7 @@ func TestGetDescUpdatedSchema(t *testing.T) {
 					},
 					{
 						Name:        "test-column-name2",
-						Description: "test-description", // This desc is copied from qdc.
+						Description: "【QDIC】test-description", // This desc is copied from qdc.
 					},
 					{
 						Name:        "test-column-name3",
