@@ -1,5 +1,22 @@
 package utils
 
+import (
+	"encoding/hex"
+	"quollio-reverse-agent/repository/qdc"
+
+	hash "lukechampine.com/blake3"
+)
+
+func GetSpecifiedAssetFromPath(asset qdc.Data, pathLayer string) qdc.Path {
+	path := asset.Path
+	for _, p := range path {
+		if p.PathLayer == pathLayer {
+			return p
+		}
+	}
+	return qdc.Path{}
+}
+
 func SplitArrayToChunks(arr []string, size int) [][]string {
 	var chunks [][]string
 
@@ -11,4 +28,27 @@ func SplitArrayToChunks(arr []string, size int) [][]string {
 		chunks = append(chunks, arr[i:end])
 	}
 	return chunks
+}
+
+func GetGlobalId(companyId string, clusterId string, dataId string, dataType string) string {
+	var prefix string
+	switch dataType {
+	case "schema":
+		prefix = "schm-"
+	case "table":
+		prefix = "tbl-"
+	case "column":
+		prefix = "clmn-"
+	case "biproject":
+		prefix = "bprj-"
+	case "workspace":
+		prefix = "wksp-"
+	case "dashboard":
+		prefix = "dsbd-"
+	case "sheet":
+		prefix = "sht-"
+	}
+	hash := hash.Sum512([]byte(companyId + clusterId + dataId))
+	ret := prefix + hex.EncodeToString(hash[:16])
+	return ret
 }

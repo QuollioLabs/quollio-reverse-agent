@@ -6,6 +6,8 @@ import (
 	"os"
 	"quollio-reverse-agent/common/logger"
 	"quollio-reverse-agent/connector/bigquery"
+
+	"quollio-reverse-agent/connector/denodo"
 	"quollio-reverse-agent/connector/glue"
 
 	"github.com/joho/godotenv"
@@ -49,6 +51,19 @@ func main() {
 			return
 		}
 		err = GlueConnector.ReflectMetadataToDataCatalog()
+		if err != nil {
+			log.Println("Failed to ReflectMetadataToDataCatalog")
+			log.Fatal(err)
+			return
+		}
+	case "denodo":
+		DenodoConnector, err := denodo.NewDenodoConnector(logger)
+		if err != nil {
+			log.Println("Failed to NewDenodoConnector")
+			log.Fatal(err)
+			return
+		}
+		err = DenodoConnector.ReflectMetadataToDataCatalog()
 		if err != nil {
 			log.Println("Failed to ReflectMetadataToDataCatalog")
 			log.Fatal(err)
