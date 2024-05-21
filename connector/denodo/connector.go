@@ -270,7 +270,7 @@ func shouldUpdateDenodoVdpDatabase(db models.GetDatabasesResult, qdcDatabase qdc
 	if (db.Description.Valid && db.Description.String == "") && qdcDatabase.Description != "" {
 		return true
 	}
-	if (db.Description.Valid && strings.HasPrefix(db.Description.String, "【QDIC】")) && qdcDatabase.Description != "" {
+	if db.Description.Valid && strings.HasPrefix(db.Description.String, "【QDIC】") {
 		return true
 	}
 	return false
@@ -283,7 +283,7 @@ func shouldUpdateDenodoVdpTable(view models.GetViewsResult, qdcTable qdc.Data) b
 	if (view.Description.Valid && view.Description.String == "") && qdcTable.Description != "" {
 		return true
 	}
-	if (view.Description.Valid && strings.HasPrefix(view.Description.String, "【QDIC】")) && qdcTable.Description != "" {
+	if view.Description.Valid && strings.HasPrefix(view.Description.String, "【QDIC】") {
 		return true
 	}
 	return false
@@ -296,7 +296,7 @@ func shouldUpdateDenodoVdpColumn(viewColumn models.GetViewColumnsResult, qdcColu
 	if (viewColumn.ColumnRemarks.Valid && viewColumn.ColumnRemarks.String == "") && qdcColumn.Description != "" {
 		return true
 	}
-	if (viewColumn.ColumnRemarks.Valid && strings.HasPrefix(viewColumn.ColumnRemarks.String, "【QDIC】")) && qdcColumn.Description != "" {
+	if viewColumn.ColumnRemarks.Valid && strings.HasPrefix(viewColumn.ColumnRemarks.String, "【QDIC】") {
 		return true
 	}
 	return false

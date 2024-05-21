@@ -8,8 +8,10 @@ import (
 	"quollio-reverse-agent/repository/bigquery"
 	"quollio-reverse-agent/repository/dataplex"
 	"quollio-reverse-agent/repository/qdc"
+	"strings"
 
 	bq "cloud.google.com/go/bigquery"
+	"cloud.google.com/go/datacatalog/apiv1/datacatalogpb"
 )
 
 type BigQueryConnector struct {
@@ -118,7 +120,7 @@ func (b *BigQueryConnector) ReflectDatasetDescToBigQuery(schemaAssets []qdc.Data
 			b.Logger.Error("Failed to GetDatasetMetadata. : %s", schemaAsset.PhysicalName)
 			return err
 		}
-		if datasetMetadata.Description == "" && schemaAsset.Description != "" {
+		if shouldUpdateBqDataset(datasetMetadata, schemaAsset) {
 			descWithPrefix := utils.AddQDICToStringAsPrefix(schemaAsset.Description)
 			_, err = b.BigQueryRepo.UpdateDatasetDescription(schemaAsset.PhysicalName, descWithPrefix)
 			if err != nil {
@@ -168,7 +170,7 @@ func (b *BigQueryConnector) ReflectTableAttributeToBigQuery(tableAssets []qdc.Da
 			b.Logger.Error("Failed to LookupEntry.: %s", tableAsset.PhysicalName)
 			return err
 		}
-		if tableAssetEntry.BusinessContext.EntryOverview.Overview == "" && tableAsset.Description != "" {
+		if shouldUpdateBqTable(tableAssetEntry, tableAsset) {
 			b.Logger.Debug("The overview of table asset will be updated.: %s", tableAsset.PhysicalName)
 			descWithPrefix := utils.AddQDICToStringAsPrefix(tableAsset.Description)
 			_, err := b.DataplexRepo.ModifyEntryOverview(tableAssetEntry.Name, descWithPrefix)
@@ -243,7 +245,7 @@ func GetDescUpdatedSchema(columnAssets []qdc.Data, tableMetadata *bq.TableMetada
 	for _, schemaField := range tableMetadata.Schema {
 		newSchemaField := schemaField // copy
 		if columnAsset, ok := mapColumnAssetByColumnName[newSchemaField.Name]; ok {
-			if newSchemaField.Description == "" && columnAsset.Description != "" {
+			if shouldUpdateBqColumn(newSchemaField, columnAsset) {
 				descWithPrefix := utils.AddQDICToStringAsPrefix(columnAsset.Description)
 				newSchemaField.Description = descWithPrefix
 				shouldSchemaUpdated = true
@@ -252,4 +254,34 @@ func GetDescUpdatedSchema(columnAssets []qdc.Data, tableMetadata *bq.TableMetada
 		tableSchemas = append(tableSchemas, newSchemaField)
 	}
 	return tableSchemas, shouldSchemaUpdated
+}
+
+func shouldUpdateBqDataset(datasetMetadata *bq.DatasetMetadata, qdcDataset qdc.Data) bool {
+	if datasetMetadata.Description == "" && qdcDataset.Description != "" {
+		return true
+	}
+	if strings.HasPrefix(datasetMetadata.Description, "【QDIC】") {
+		return true
+	}
+	return false
+}
+
+func shouldUpdateBqTable(tableMetadata *datacatalogpb.Entry, qdcTable qdc.Data) bool {
+	if tableMetadata.BusinessContext.EntryOverview.Overview == "" && qdcTable.Description != "" {
+		return true
+	}
+	if strings.HasPrefix(tableMetadata.BusinessContext.EntryOverview.Overview, "【QDIC】") {
+		return true
+	}
+	return false
+}
+
+func shouldUpdateBqColumn(columnMetadata *bq.FieldSchema, qdcColumn qdc.Data) bool {
+	if columnMetadata.Description == "" && qdcColumn.Description != "" {
+		return true
+	}
+	if strings.HasPrefix(columnMetadata.Description, "【QDIC】") {
+		return true
+	}
+	return false
 }
