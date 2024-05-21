@@ -9,6 +9,7 @@ import (
 	"quollio-reverse-agent/repository/glue/code"
 	"quollio-reverse-agent/repository/qdc"
 	"reflect"
+	"strings"
 
 	glueService "github.com/aws/aws-sdk-go-v2/service/glue"
 	"github.com/aws/aws-sdk-go-v2/service/glue/types"
@@ -176,7 +177,7 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 			return err
 		}
 		updateTableInput := genUpdateTableInput(glueTable)
-		if shouldTableBeUpdated(*glueTable.Table, tableAsset) {
+		if shouldTableBeUpdated(glueTable.Table, tableAsset) {
 			descWithPrefix := utils.AddQDICToStringAsPrefix(tableAsset.Description)
 			updateTableInput.TableInput.Description = &descWithPrefix
 			tableShouldBeUpdated = true
@@ -350,11 +351,20 @@ func shouldDatabaseBeUpdated(glueDB types.Database, dbAsset qdc.Data) bool {
 	if (glueDB.Description == nil || *glueDB.Description == "") && dbAsset.Description != "" {
 		return true
 	}
+	if (glueDB.Description == nil || strings.HasPrefix(*glueDB.Description, "【QDIC】")) && dbAsset.Description != "" {
+		return true
+	}
 	return false
 }
 
-func shouldTableBeUpdated(glueTable types.Table, tableAsset qdc.Data) bool {
+func shouldTableBeUpdated(glueTable *types.Table, tableAsset qdc.Data) bool {
+	if glueTable == nil {
+		return false
+	}
 	if (glueTable.Description == nil || *glueTable.Description == "") && tableAsset.Description != "" {
+		return true
+	}
+	if (glueTable.Description == nil || strings.HasPrefix(*glueTable.Description, "【QDIC】")) && tableAsset.Description != "" {
 		return true
 	}
 	return false
@@ -362,6 +372,9 @@ func shouldTableBeUpdated(glueTable types.Table, tableAsset qdc.Data) bool {
 
 func shouldColumnBeUpdated(glueColumn types.Column, columnAsset qdc.Data) bool {
 	if (glueColumn.Comment == nil || *glueColumn.Comment == "") && columnAsset.Description != "" {
+		return true
+	}
+	if (glueColumn.Comment == nil || strings.HasPrefix(*glueColumn.Comment, "【QDIC】")) && columnAsset.Description != "" {
 		return true
 	}
 	return false

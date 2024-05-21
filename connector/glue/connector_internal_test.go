@@ -675,6 +675,22 @@ func TestShouldDatabaseBeUpdated(t *testing.T) {
 			},
 			Expect: false,
 		},
+		{
+			Input: struct {
+				GlueDB  types.Database
+				DBAsset qdc.Data
+			}{
+				GlueDB: types.Database{
+					Name:        genStringPointer("test-db1"),
+					Description: genStringPointer("【QDIC】test on console"),
+				},
+				DBAsset: qdc.Data{
+					PhysicalName: "test-db1",
+					Description:  "test from qdc",
+				},
+			},
+			Expect: true,
+		},
 	}
 	for _, testCase := range testCases {
 		res := shouldDatabaseBeUpdated(testCase.Input.GlueDB, testCase.Input.DBAsset)
@@ -788,9 +804,25 @@ func TestShouldTableBeUpdated(t *testing.T) {
 			},
 			Expect: false,
 		},
+		{
+			Input: struct {
+				GlueTable  types.Table
+				TableAsset qdc.Data
+			}{
+				GlueTable: types.Table{
+					Name:        genStringPointer("test-table1"),
+					Description: genStringPointer("【QDIC】test on console"),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-table1",
+					Description:  "test from qdc",
+				},
+			},
+			Expect: true,
+		},
 	}
 	for _, testCase := range testCases {
-		res := shouldTableBeUpdated(testCase.Input.GlueTable, testCase.Input.TableAsset)
+		res := shouldTableBeUpdated(&testCase.Input.GlueTable, testCase.Input.TableAsset)
 		if res != testCase.Expect {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}
@@ -900,6 +932,22 @@ func TestShouldColumnBeUpdated(t *testing.T) {
 				},
 			},
 			Expect: false,
+		},
+		{
+			Input: struct {
+				GlueColumn types.Column
+				TableAsset qdc.Data
+			}{
+				GlueColumn: types.Column{
+					Name:    genStringPointer("test-column1"),
+					Comment: genStringPointer("【QDIC】test on console"),
+				},
+				TableAsset: qdc.Data{
+					PhysicalName: "test-column1",
+					Description:  "test from qdc",
+				},
+			},
+			Expect: true,
 		},
 	}
 	for _, testCase := range testCases {
