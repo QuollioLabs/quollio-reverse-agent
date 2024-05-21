@@ -18,10 +18,11 @@ type BigQueryConnector struct {
 	QDCExternalAPIClient qdc.QDCExternalAPI
 	DataplexRepo         dataplex.DataplexClient
 	BigQueryRepo         bigquery.BigQueryClient
+	OverwriteMode        string
 	Logger               *logger.BuiltinLogger
 }
 
-func NewBigqueryConnector(logger *logger.BuiltinLogger) (BigQueryConnector, error) {
+func NewBigqueryConnector(overwriteMode string, logger *logger.BuiltinLogger) (BigQueryConnector, error) {
 	serviceCreds := os.Getenv("GOOGLE_CLOUD_SERVICE_ACCOUNT_CREDENTIALS")
 	dataplexClient, err := dataplex.NewDataplexClient(serviceCreds)
 	if err != nil {
@@ -40,6 +41,7 @@ func NewBigqueryConnector(logger *logger.BuiltinLogger) (BigQueryConnector, erro
 		QDCExternalAPIClient: externalAPI,
 		DataplexRepo:         dataplexClient,
 		BigQueryRepo:         bigqueryClient,
+		OverwriteMode:        overwriteMode,
 		Logger:               logger,
 	}
 
@@ -120,7 +122,7 @@ func (b *BigQueryConnector) ReflectDatasetDescToBigQuery(schemaAssets []qdc.Data
 			b.Logger.Error("Failed to GetDatasetMetadata. : %s", schemaAsset.PhysicalName)
 			return err
 		}
-		if shouldUpdateBqDataset(datasetMetadata, schemaAsset) {
+		if shouldUpdateBqDataset(b.OverwriteMode, datasetMetadata, schemaAsset) {
 			descWithPrefix := utils.AddQDICToStringAsPrefix(schemaAsset.Description)
 			_, err = b.BigQueryRepo.UpdateDatasetDescription(schemaAsset.PhysicalName, descWithPrefix)
 			if err != nil {
@@ -151,7 +153,7 @@ func (b *BigQueryConnector) ReflectTableAttributeToBigQuery(tableAssets []qdc.Da
 			return err
 		}
 
-		tableSchemas, shouldSchemaUpdated := GetDescUpdatedSchema(columnAssets, tableMetadata)
+		tableSchemas, shouldSchemaUpdated := GetDescUpdatedSchema(b.OverwriteMode, columnAssets, tableMetadata)
 		if shouldSchemaUpdated {
 			metadataToUpdate.Schema = tableSchemas
 			// Update table and schema description
@@ -170,7 +172,7 @@ func (b *BigQueryConnector) ReflectTableAttributeToBigQuery(tableAssets []qdc.Da
 			b.Logger.Error("Failed to LookupEntry.: %s", tableAsset.PhysicalName)
 			return err
 		}
-		if shouldUpdateBqTable(tableAssetEntry, tableAsset) {
+		if shouldUpdateBqTable(b.OverwriteMode, tableAssetEntry, tableAsset) {
 			b.Logger.Debug("The overview of table asset will be updated.: %s", tableAsset.PhysicalName)
 			descWithPrefix := utils.AddQDICToStringAsPrefix(tableAsset.Description)
 			_, err := b.DataplexRepo.ModifyEntryOverview(tableAssetEntry.Name, descWithPrefix)
@@ -238,14 +240,14 @@ func MapColumnAssetByColumnName(columnAssets []qdc.Data) map[string]qdc.Data {
 	return mapColumnAssetsByColumnName
 }
 
-func GetDescUpdatedSchema(columnAssets []qdc.Data, tableMetadata *bq.TableMetadata) ([]*bq.FieldSchema, bool) {
+func GetDescUpdatedSchema(overwriteMode string, columnAssets []qdc.Data, tableMetadata *bq.TableMetadata) ([]*bq.FieldSchema, bool) {
 	var tableSchemas []*bq.FieldSchema
 	shouldSchemaUpdated := false
 	mapColumnAssetByColumnName := MapColumnAssetByColumnName(columnAssets)
 	for _, schemaField := range tableMetadata.Schema {
 		newSchemaField := schemaField // copy
 		if columnAsset, ok := mapColumnAssetByColumnName[newSchemaField.Name]; ok {
-			if shouldUpdateBqColumn(newSchemaField, columnAsset) {
+			if shouldUpdateBqColumn(overwriteMode, newSchemaField, columnAsset) {
 				descWithPrefix := utils.AddQDICToStringAsPrefix(columnAsset.Description)
 				newSchemaField.Description = descWithPrefix
 				shouldSchemaUpdated = true
@@ -256,7 +258,10 @@ func GetDescUpdatedSchema(columnAssets []qdc.Data, tableMetadata *bq.TableMetada
 	return tableSchemas, shouldSchemaUpdated
 }
 
-func shouldUpdateBqDataset(datasetMetadata *bq.DatasetMetadata, qdcDataset qdc.Data) bool {
+func shouldUpdateBqDataset(overwriteMode string, datasetMetadata *bq.DatasetMetadata, qdcDataset qdc.Data) bool {
+	if overwriteMode == utils.OverwriteAll && qdcDataset.Description != "" {
+		return true
+	}
 	if datasetMetadata.Description == "" && qdcDataset.Description != "" {
 		return true
 	}
@@ -266,7 +271,10 @@ func shouldUpdateBqDataset(datasetMetadata *bq.DatasetMetadata, qdcDataset qdc.D
 	return false
 }
 
-func shouldUpdateBqTable(tableMetadata *datacatalogpb.Entry, qdcTable qdc.Data) bool {
+func shouldUpdateBqTable(overwriteMode string, tableMetadata *datacatalogpb.Entry, qdcTable qdc.Data) bool {
+	if overwriteMode == utils.OverwriteAll && qdcTable.Description != "" {
+		return true
+	}
 	if tableMetadata.BusinessContext.EntryOverview.Overview == "" && qdcTable.Description != "" {
 		return true
 	}
@@ -276,7 +284,10 @@ func shouldUpdateBqTable(tableMetadata *datacatalogpb.Entry, qdcTable qdc.Data) 
 	return false
 }
 
-func shouldUpdateBqColumn(columnMetadata *bq.FieldSchema, qdcColumn qdc.Data) bool {
+func shouldUpdateBqColumn(overwriteMode string, columnMetadata *bq.FieldSchema, qdcColumn qdc.Data) bool {
+	if overwriteMode == utils.OverwriteAll && qdcColumn.Description != "" {
+		return true
+	}
 	if columnMetadata.Description == "" && qdcColumn.Description != "" {
 		return true
 	}

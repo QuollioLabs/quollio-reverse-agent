@@ -10,7 +10,7 @@ import (
 func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.Database, dbAssets map[string]qdc.Data) error {
 	databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, localDatabase.DatabaseName, "schema")
 	if qdcDBAsset, ok := dbAssets[databaseGlobalID]; ok {
-		if shouldUpdateDenodoLocalDatabase(localDatabase, qdcDBAsset) {
+		if shouldUpdateDenodoLocalDatabase(d.OverwriteMode, localDatabase, qdcDBAsset) {
 			descWithPrefix := utils.AddQDICToStringAsPrefix(qdcDBAsset.Description)
 			putDatabaseInput := models.PutDatabaseInput{
 				DatabaseID:      localDatabase.DatabaseId,
@@ -43,7 +43,7 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 		if err != nil {
 			return err
 		}
-		if shouldUpdateDenodoLocalTable(localViewDetail, tableAsset) {
+		if shouldUpdateDenodoLocalTable(d.OverwriteMode, localViewDetail, tableAsset) {
 			descWithPrefix := utils.AddQDICToStringAsPrefix(tableAsset.Description)
 			updateLocalViewInput := models.UpdateLocalViewInput{
 				ID:              localViewDetail.Id,
@@ -79,7 +79,7 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 		}
 		localViewColumnMap := convertLocalColumnListToMap(localViewColumns)
 		if localViewColumn, ok := localViewColumnMap[columnAsset.PhysicalName]; ok {
-			if shouldUpdateDenodoLocalColumn(localViewColumn, columnAsset) {
+			if shouldUpdateDenodoLocalColumn(d.OverwriteMode, localViewColumn, columnAsset) {
 				descWithPrefix := utils.AddQDICToStringAsPrefix(columnAsset.Description)
 				updateLocalViewColumnInput := models.UpdateLocalViewFieldInput{
 					DatabaseName:     qdcDatabaseAsset.Name,
@@ -107,7 +107,7 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 	return nil
 }
 
-func shouldUpdateDenodoLocalDatabase(db models.Database, qdcDatabase qdc.Data) bool {
+func shouldUpdateDenodoLocalDatabase(overwriteMode string, db models.Database, qdcDatabase qdc.Data) bool {
 	if db.DatabaseDescription == "" && qdcDatabase.Description != "" {
 		return true
 	}
@@ -115,7 +115,7 @@ func shouldUpdateDenodoLocalDatabase(db models.Database, qdcDatabase qdc.Data) b
 	return false
 }
 
-func shouldUpdateDenodoLocalTable(view models.ViewDetail, qdcTable qdc.Data) bool {
+func shouldUpdateDenodoLocalTable(overwriteMode string, view models.ViewDetail, qdcTable qdc.Data) bool {
 	if view.InLocal && view.Description == "" && qdcTable.Description != "" {
 		return true
 	}
@@ -123,7 +123,7 @@ func shouldUpdateDenodoLocalTable(view models.ViewDetail, qdcTable qdc.Data) boo
 	return false
 }
 
-func shouldUpdateDenodoLocalColumn(viewColumn models.ViewColumn, qdcColumn qdc.Data) bool {
+func shouldUpdateDenodoLocalColumn(overwriteMode string, viewColumn models.ViewColumn, qdcColumn qdc.Data) bool {
 	if viewColumn.InLocal && viewColumn.Description == "" && qdcColumn.Description != "" {
 		return true
 	}

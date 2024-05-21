@@ -8,6 +8,11 @@ import (
 	hash "lukechampine.com/blake3"
 )
 
+const (
+	OverwriteIfEmpty = "OVERWRITE_IF_EMPTY" // (Default)only assets whose description is empty string or nil will be updated.
+	OverwriteAll     = "OVERWRITE_ALL"      // all asset description will be updated.
+)
+
 func GetSpecifiedAssetFromPath(asset qdc.Data, pathLayer string) qdc.Path {
 	path := asset.Path
 	for _, p := range path {

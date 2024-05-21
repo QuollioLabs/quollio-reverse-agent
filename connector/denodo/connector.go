@@ -19,10 +19,11 @@ type DenodoConnector struct {
 	DenodoDBClient       *odbc.Client
 	CompanyID            string
 	DenodoHostName       string
+	OverwriteMode        string
 	Logger               *logger.BuiltinLogger
 }
 
-func NewDenodoConnector(logger *logger.BuiltinLogger) (DenodoConnector, error) {
+func NewDenodoConnector(overwriteMode string, logger *logger.BuiltinLogger) (DenodoConnector, error) {
 
 	qdcBaseURL := os.Getenv("QDC_BASE_URL")
 	qdcClientID := os.Getenv("QDC_CLIENT_ID")
@@ -54,6 +55,7 @@ func NewDenodoConnector(logger *logger.BuiltinLogger) (DenodoConnector, error) {
 		DenodoDBClient:       client,
 		CompanyID:            companyId,
 		DenodoHostName:       denodoHostName,
+		OverwriteMode:        overwriteMode,
 		Logger:               logger,
 	}
 	return connector, nil
@@ -168,7 +170,7 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 		d.Logger.Info("Start to update denodo database assets")
 		databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, vdpDatabase.DatabaseName, "schema")
 		if qdcDatabaseAsset, ok := qdcRootAssetsMap[databaseGlobalID]; ok {
-			if shouldUpdateDenodoVdpDatabase(vdpDatabase, qdcDatabaseAsset) {
+			if shouldUpdateDenodoVdpDatabase(d.OverwriteMode, vdpDatabase, qdcDatabaseAsset) {
 				descWithPrefix := utils.AddQDICToStringAsPrefix(qdcDatabaseAsset.Description)
 				err := d.DenodoDBClient.UpdateVdpDatabaseDesc(vdpDatabase.DatabaseName, descWithPrefix)
 				if err != nil {
@@ -187,7 +189,7 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 			tableFQN := fmt.Sprint(vdpDatabase.DatabaseName, vdpTableAsset.ViewName)
 			tableGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, tableFQN, "table")
 			if qdcTableAsset, ok := qdcTableAssetsMap[tableGlobalID]; ok {
-				if shouldUpdateDenodoVdpTable(vdpTableAsset, qdcTableAsset) {
+				if shouldUpdateDenodoVdpTable(d.OverwriteMode, vdpTableAsset, qdcTableAsset) {
 					descWithPrefix := utils.AddQDICToStringAsPrefix(qdcTableAsset.Description)
 					err := d.DenodoDBClient.UpdateVdpTableDesc(vdpTableAsset, descWithPrefix)
 					if err != nil {
@@ -210,7 +212,7 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 					d.Logger.Debug("Only derived view will be updated. database name: %s, table name: %s column name: %s", vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
 					continue
 				}
-				if shouldUpdateDenodoVdpColumn(vdpColumnAsset, qdcColumnAsset) {
+				if shouldUpdateDenodoVdpColumn(d.OverwriteMode, vdpColumnAsset, qdcColumnAsset) {
 					descWithPrefix := utils.AddQDICToStringAsPrefix(qdcColumnAsset.Description)
 					err := d.DenodoDBClient.UpdateVdpTableColumnDesc(vdpColumnAsset, descWithPrefix)
 					if err != nil {
@@ -263,7 +265,7 @@ func convertQdcAssetListToMap(qdcAssetList []qdc.Data) map[string]qdc.Data {
 	return mapQDCAsset
 }
 
-func shouldUpdateDenodoVdpDatabase(db models.GetDatabasesResult, qdcDatabase qdc.Data) bool {
+func shouldUpdateDenodoVdpDatabase(overwriteMode string, db models.GetDatabasesResult, qdcDatabase qdc.Data) bool {
 	if !db.Description.Valid && qdcDatabase.Description != "" {
 		return true
 	}
@@ -276,7 +278,7 @@ func shouldUpdateDenodoVdpDatabase(db models.GetDatabasesResult, qdcDatabase qdc
 	return false
 }
 
-func shouldUpdateDenodoVdpTable(view models.GetViewsResult, qdcTable qdc.Data) bool {
+func shouldUpdateDenodoVdpTable(overwriteMode string, view models.GetViewsResult, qdcTable qdc.Data) bool {
 	if !view.Description.Valid && qdcTable.Description != "" {
 		return true
 	}
@@ -289,7 +291,7 @@ func shouldUpdateDenodoVdpTable(view models.GetViewsResult, qdcTable qdc.Data) b
 	return false
 }
 
-func shouldUpdateDenodoVdpColumn(viewColumn models.GetViewColumnsResult, qdcColumn qdc.Data) bool {
+func shouldUpdateDenodoVdpColumn(overwriteMode string, viewColumn models.GetViewColumnsResult, qdcColumn qdc.Data) bool {
 	if !viewColumn.ColumnRemarks.Valid && qdcColumn.Description != "" {
 		return true
 	}

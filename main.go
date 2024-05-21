@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"quollio-reverse-agent/common/logger"
+	"quollio-reverse-agent/common/utils"
 	"quollio-reverse-agent/connector/bigquery"
 
 	"quollio-reverse-agent/connector/denodo"
@@ -27,11 +28,19 @@ func main() {
 	systemName := flag.String("system-name", os.Getenv("SYSTEM_NAME"), "You need to choose which connector to use.")
 	flag.Parse()
 
+	var overwriteMode string
+	switch os.Getenv("OVERWRITE_MODE") {
+	case utils.OverwriteAll:
+		overwriteMode = utils.OverwriteAll
+	default:
+		overwriteMode = utils.OverwriteIfEmpty
+	}
+
 	logger := logger.NewBuiltinLogger()
 	log.Println("Start ReflectMetadataToDataCatalog")
 	switch *systemName {
 	case "bigquery":
-		BqConnector, err := bigquery.NewBigqueryConnector(logger)
+		BqConnector, err := bigquery.NewBigqueryConnector(overwriteMode, logger)
 		if err != nil {
 			log.Println("Failed to NewBigqueryConnector")
 			log.Fatal(err)
@@ -44,7 +53,7 @@ func main() {
 			return
 		}
 	case "athena":
-		GlueConnector, err := glue.NewGlueConnector(logger)
+		GlueConnector, err := glue.NewGlueConnector(overwriteMode, logger)
 		if err != nil {
 			log.Println("Failed to NewGlueConnector")
 			log.Fatal(err)
@@ -57,7 +66,7 @@ func main() {
 			return
 		}
 	case "denodo":
-		DenodoConnector, err := denodo.NewDenodoConnector(logger)
+		DenodoConnector, err := denodo.NewDenodoConnector(overwriteMode, logger)
 		if err != nil {
 			log.Println("Failed to NewDenodoConnector")
 			log.Fatal(err)

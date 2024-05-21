@@ -19,10 +19,11 @@ type GlueConnector struct {
 	QDCExternalAPIClient qdc.QDCExternalAPI
 	GlueRepo             glue.GlueClient
 	AthenaAccountID      string
+	overwriteMode        string
 	Logger               *logger.BuiltinLogger
 }
 
-func NewGlueConnector(logger *logger.BuiltinLogger) (GlueConnector, error) {
+func NewGlueConnector(overwriteMode string, logger *logger.BuiltinLogger) (GlueConnector, error) {
 	iamRoleARN := os.Getenv("AWS_IAM_ROLE_FOR_GLUE_TABLE")
 	profileName := os.Getenv("PROFILE_NAME")
 	athenaAccountID := os.Getenv("ATHENA_ACCOUNT_ID")
@@ -39,6 +40,7 @@ func NewGlueConnector(logger *logger.BuiltinLogger) (GlueConnector, error) {
 		QDCExternalAPIClient: externalAPI,
 		GlueRepo:             glueClient,
 		AthenaAccountID:      athenaAccountID,
+		overwriteMode:        overwriteMode,
 		Logger:               logger,
 	}
 
@@ -123,7 +125,7 @@ func (g *GlueConnector) ReflectDatabaseDescToAthena(dbAssets []qdc.Data) error {
 		if glueDB, ok := mapDBAssetByDBName[dbAsset.PhysicalName]; ok {
 			updateDatabaseInput := genUpdateDatabaseInput(glueDB)
 
-			if shouldDatabaseBeUpdated(glueDB, dbAsset) {
+			if shouldDatabaseBeUpdated(g.overwriteMode, glueDB, dbAsset) {
 				descWithPrefix := utils.AddQDICToStringAsPrefix(dbAsset.Description)
 				updateDatabaseInput.DatabaseInput.Description = &descWithPrefix
 				_, err := g.GlueRepo.UpdateDatabase(updateDatabaseInput, g.AthenaAccountID)
@@ -177,7 +179,7 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 			return err
 		}
 		updateTableInput := genUpdateTableInput(glueTable)
-		if shouldTableBeUpdated(glueTable.Table, tableAsset) {
+		if shouldTableBeUpdated(g.overwriteMode, glueTable.Table, tableAsset) {
 			descWithPrefix := utils.AddQDICToStringAsPrefix(tableAsset.Description)
 			updateTableInput.TableInput.Description = &descWithPrefix
 			tableShouldBeUpdated = true
@@ -186,7 +188,7 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 		if err != nil {
 			return err
 		}
-		updatedColumns, columnShouldBeUpdated := getDescUpdatedColumns(glueTable, columnAssets)
+		updatedColumns, columnShouldBeUpdated := getDescUpdatedColumns(g.overwriteMode, glueTable, columnAssets)
 		if columnShouldBeUpdated {
 			updateTableInput.TableInput.StorageDescriptor.Columns = updatedColumns
 		}
@@ -239,7 +241,7 @@ func (g *GlueConnector) ReflectMetadataToDataCatalog() error {
 	return nil
 }
 
-func getDescUpdatedColumns(glueTable *glueService.GetTableOutput, columnAssets []qdc.Data) ([]types.Column, bool) {
+func getDescUpdatedColumns(overwriteMode string, glueTable *glueService.GetTableOutput, columnAssets []qdc.Data) ([]types.Column, bool) {
 	var updatedColumns []types.Column
 	shouldBeUpdated := false
 	mapColumnAssetByColumnName := mapColumnAssetByColumnName(columnAssets)
@@ -252,7 +254,7 @@ func getDescUpdatedColumns(glueTable *glueService.GetTableOutput, columnAssets [
 			columnName = *column.Name
 		}
 		if columnAsset, ok := mapColumnAssetByColumnName[columnName]; ok {
-			if shouldColumnBeUpdated(column, columnAsset) {
+			if shouldColumnBeUpdated(overwriteMode, column, columnAsset) {
 				updatedColumn := column
 				descWithPrefix := utils.AddQDICToStringAsPrefix(columnAsset.Description)
 				updatedColumn.Comment = &descWithPrefix
@@ -347,7 +349,7 @@ func genUpdateTableInput(getTableOutput *glueService.GetTableOutput) glueService
 	return updateTableInput
 }
 
-func shouldDatabaseBeUpdated(glueDB types.Database, dbAsset qdc.Data) bool {
+func shouldDatabaseBeUpdated(overwriteMode string, glueDB types.Database, dbAsset qdc.Data) bool {
 	if (glueDB.Description == nil || *glueDB.Description == "") && dbAsset.Description != "" {
 		return true
 	}
@@ -357,7 +359,7 @@ func shouldDatabaseBeUpdated(glueDB types.Database, dbAsset qdc.Data) bool {
 	return false
 }
 
-func shouldTableBeUpdated(glueTable *types.Table, tableAsset qdc.Data) bool {
+func shouldTableBeUpdated(overwriteMode string, glueTable *types.Table, tableAsset qdc.Data) bool {
 	if glueTable == nil {
 		return false
 	}
@@ -370,7 +372,7 @@ func shouldTableBeUpdated(glueTable *types.Table, tableAsset qdc.Data) bool {
 	return false
 }
 
-func shouldColumnBeUpdated(glueColumn types.Column, columnAsset qdc.Data) bool {
+func shouldColumnBeUpdated(overwriteMode string, glueColumn types.Column, columnAsset qdc.Data) bool {
 	if (glueColumn.Comment == nil || *glueColumn.Comment == "") && columnAsset.Description != "" {
 		return true
 	}

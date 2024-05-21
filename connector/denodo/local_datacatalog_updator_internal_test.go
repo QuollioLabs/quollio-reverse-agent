@@ -1,6 +1,7 @@
 package denodo
 
 import (
+	"quollio-reverse-agent/common/utils"
 	"quollio-reverse-agent/repository/denodo/rest/models"
 	"quollio-reverse-agent/repository/qdc"
 	"testing"
@@ -82,7 +83,7 @@ func TestShouldUpdateDonodoLocalDatabase(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldUpdateDenodoLocalDatabase(testCase.Input.LocalAsset, testCase.Input.QdcDBAsset)
+		res := shouldUpdateDenodoLocalDatabase(utils.OverwriteIfEmpty, testCase.Input.LocalAsset, testCase.Input.QdcDBAsset)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %v. Name: %s", testCase.Expect, res, testCase.Input.LocalAsset.DatabaseName)
 		}
@@ -184,7 +185,7 @@ func TestShouldUpdateDenodoLocalTable(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldUpdateDenodoLocalTable(testCase.Input.LocalAsset, testCase.Input.QdcTableAsset)
+		res := shouldUpdateDenodoLocalTable(utils.OverwriteIfEmpty, testCase.Input.LocalAsset, testCase.Input.QdcTableAsset)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %v. Name: %s", testCase.Expect, res, testCase.Input.LocalAsset.Name)
 		}
@@ -286,7 +287,7 @@ func TestShouldUpdateDenodoLocalColumn(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldUpdateDenodoLocalColumn(testCase.Input.LocalAsset, testCase.Input.QdcTableAsset)
+		res := shouldUpdateDenodoLocalColumn(utils.OverwriteIfEmpty, testCase.Input.LocalAsset, testCase.Input.QdcTableAsset)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %v. Name: %s", testCase.Expect, res, testCase.Input.LocalAsset.Name)
 		}
