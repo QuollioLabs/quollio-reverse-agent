@@ -125,7 +125,7 @@ func (b *BigQueryConnector) ReflectDatasetDescToBigQuery(schemaAssets []qdc.Data
 			return err
 		}
 		if shouldUpdateBqDataset(b.PrefixForUpdate, b.OverwriteMode, datasetMetadata, schemaAsset) {
-			descWithPrefix := utils.AddQDICToStringAsPrefix(b.PrefixForUpdate, schemaAsset.Description)
+			descWithPrefix := utils.AddPrefixToStringIfNotHas(b.PrefixForUpdate, schemaAsset.Description)
 			_, err = b.BigQueryRepo.UpdateDatasetDescription(schemaAsset.PhysicalName, descWithPrefix)
 			if err != nil {
 				b.Logger.Error("The update was failed.: %s", schemaAsset.PhysicalName)
@@ -176,7 +176,7 @@ func (b *BigQueryConnector) ReflectTableAttributeToBigQuery(tableAssets []qdc.Da
 		}
 		if shouldUpdateBqTable(b.PrefixForUpdate, b.OverwriteMode, tableAssetEntry, tableAsset) {
 			b.Logger.Debug("The overview of table asset will be updated.: %s", tableAsset.PhysicalName)
-			descWithPrefix := utils.AddQDICToStringAsPrefix(b.PrefixForUpdate, tableAsset.Description)
+			descWithPrefix := utils.AddPrefixToStringIfNotHas(b.PrefixForUpdate, tableAsset.Description)
 			_, err := b.DataplexRepo.ModifyEntryOverview(tableAssetEntry.Name, descWithPrefix)
 			if err != nil {
 				b.Logger.Error("The update for the overview of the table asset was failed.: %s", tableAsset.PhysicalName)
@@ -250,7 +250,7 @@ func GetDescUpdatedSchema(prefixForUpdate, overwriteMode string, columnAssets []
 		newSchemaField := schemaField // copy
 		if columnAsset, ok := mapColumnAssetByColumnName[newSchemaField.Name]; ok {
 			if shouldUpdateBqColumn(prefixForUpdate, overwriteMode, newSchemaField, columnAsset) {
-				descWithPrefix := utils.AddQDICToStringAsPrefix(prefixForUpdate, columnAsset.Description)
+				descWithPrefix := utils.AddPrefixToStringIfNotHas(prefixForUpdate, columnAsset.Description)
 				newSchemaField.Description = descWithPrefix
 				shouldSchemaUpdated = true
 			}

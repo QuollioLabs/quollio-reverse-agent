@@ -4,12 +4,14 @@ import (
 	"encoding/hex"
 	"fmt"
 	"quollio-reverse-agent/repository/qdc"
+	"strings"
+	"unicode"
 
 	hash "lukechampine.com/blake3"
 )
 
 const (
-	DefaultPrefix    = "【QDIC】" // Default prefix for update
+	DefaultPrefix    = "【QDIC】"             // Default prefix for update
 	OverwriteIfEmpty = "OVERWRITE_IF_EMPTY" // (Default)only assets whose description is empty string or nil will be updated.
 	OverwriteAll     = "OVERWRITE_ALL"      // all asset description will be updated.
 )
@@ -60,6 +62,18 @@ func GetGlobalId(companyId string, clusterId string, dataId string, dataType str
 	return ret
 }
 
-func AddQDICToStringAsPrefix(prefixForUpdate, input string) string {
+func AddPrefixToStringIfNotHas(prefixForUpdate, input string) string {
+	if strings.HasPrefix(input, prefixForUpdate) {
+		return input
+	}
 	return fmt.Sprint(prefixForUpdate, input)
+}
+
+func IsStringContainJapanese(s string) bool {
+	for _, r := range s {
+		if unicode.In(r, unicode.Hiragana, unicode.Katakana, unicode.Han) {
+			return true
+		}
+	}
+	return false
 }

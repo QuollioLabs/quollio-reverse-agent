@@ -129,7 +129,7 @@ func (g *GlueConnector) ReflectDatabaseDescToAthena(dbAssets []qdc.Data) error {
 
 			if shouldDatabaseBeUpdated(g.PrefixForUpdate, g.OverwriteMode, glueDB, dbAsset) {
 				g.Logger.Debug("Database will be updated. name %s", *glueDB.Name)
-				descWithPrefix := utils.AddQDICToStringAsPrefix(g.PrefixForUpdate, dbAsset.Description)
+				descWithPrefix := utils.AddPrefixToStringIfNotHas(g.PrefixForUpdate, dbAsset.Description)
 				updateDatabaseInput.DatabaseInput.Description = &descWithPrefix
 				_, err := g.GlueRepo.UpdateDatabase(updateDatabaseInput, g.AthenaAccountID)
 				if err != nil {
@@ -184,7 +184,7 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 		}
 		updateTableInput := genUpdateTableInput(glueTable)
 		if shouldTableBeUpdated(g.PrefixForUpdate, g.OverwriteMode, glueTable.Table, tableAsset) {
-			descWithPrefix := utils.AddQDICToStringAsPrefix(g.PrefixForUpdate, tableAsset.Description)
+			descWithPrefix := utils.AddPrefixToStringIfNotHas(g.PrefixForUpdate, tableAsset.Description)
 			g.Logger.Debug("Table will be updated: %s", *glueTable.Table.Name)
 			updateTableInput.TableInput.Description = &descWithPrefix
 			tableShouldBeUpdated = true
@@ -261,7 +261,7 @@ func getDescUpdatedColumns(prefixForUpdate, overwriteMode string, glueTable *glu
 		if columnAsset, ok := mapColumnAssetByColumnName[columnName]; ok {
 			if shouldColumnBeUpdated(prefixForUpdate, overwriteMode, column, columnAsset) {
 				updatedColumn := column
-				descWithPrefix := utils.AddQDICToStringAsPrefix(prefixForUpdate, columnAsset.Description)
+				descWithPrefix := utils.AddPrefixToStringIfNotHas(prefixForUpdate, columnAsset.Description)
 				updatedColumn.Comment = &descWithPrefix
 				updatedColumns = append(updatedColumns, updatedColumn)
 				shouldBeUpdated = true

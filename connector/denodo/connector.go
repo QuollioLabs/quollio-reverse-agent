@@ -173,7 +173,7 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 		databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, vdpDatabase.DatabaseName, "schema")
 		if qdcDatabaseAsset, ok := qdcRootAssetsMap[databaseGlobalID]; ok {
 			if shouldUpdateDenodoVdpDatabase(d.PrefixForUpdate, d.OverwriteMode, vdpDatabase, qdcDatabaseAsset) {
-				descWithPrefix := utils.AddQDICToStringAsPrefix(d.PrefixForUpdate, qdcDatabaseAsset.Description)
+				descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, qdcDatabaseAsset.Description)
 				err := d.DenodoDBClient.UpdateVdpDatabaseDesc(vdpDatabase.DatabaseName, descWithPrefix)
 				if err != nil {
 					return err
@@ -192,7 +192,7 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 			tableGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, tableFQN, "table")
 			if qdcTableAsset, ok := qdcTableAssetsMap[tableGlobalID]; ok {
 				if shouldUpdateDenodoVdpTable(d.PrefixForUpdate, d.OverwriteMode, vdpTableAsset, qdcTableAsset) {
-					descWithPrefix := utils.AddQDICToStringAsPrefix(d.PrefixForUpdate, qdcTableAsset.Description)
+					descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, qdcTableAsset.Description)
 					err := d.DenodoDBClient.UpdateVdpTableDesc(vdpTableAsset, descWithPrefix)
 					if err != nil {
 						return err
@@ -211,18 +211,18 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 			columnGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, columnFQN, "column")
 			if qdcColumnAsset, ok := qdcColumnAssetsMap[columnGlobalID]; ok {
 				if vdpColumnAsset.ViewType != 1 {
-					d.Logger.Debug("Only derived view will be updated. database name: %s, table name: %s column name: %s", vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
+					d.Logger.Debug("Skip update view. only derived view will be updated. database name: %s, table name: %s column name: %s", vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
 					continue
 				}
 				if shouldUpdateDenodoVdpColumn(d.PrefixForUpdate, d.OverwriteMode, vdpColumnAsset, qdcColumnAsset) {
-					descWithPrefix := utils.AddQDICToStringAsPrefix(d.PrefixForUpdate, qdcColumnAsset.Description)
+					descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, qdcColumnAsset.Description)
 					err := d.DenodoDBClient.UpdateVdpTableColumnDesc(vdpColumnAsset, descWithPrefix)
 					if err != nil {
 						return err
 					}
+					d.Logger.Debug("Updated column description. database name: %s. table name: %s. column name: %s", vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
 				}
 			}
-			d.Logger.Debug("Updated column description. database name: %s. table name: %s. column name: %s", vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
 		}
 	}
 	return nil

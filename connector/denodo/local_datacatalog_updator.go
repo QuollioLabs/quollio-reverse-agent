@@ -1,6 +1,7 @@
 package denodo
 
 import (
+	"fmt"
 	"quollio-reverse-agent/common/utils"
 	"quollio-reverse-agent/repository/denodo/rest"
 	"quollio-reverse-agent/repository/denodo/rest/models"
@@ -12,7 +13,7 @@ func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.
 	databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, localDatabase.DatabaseName, "schema")
 	if qdcDBAsset, ok := dbAssets[databaseGlobalID]; ok {
 		if shouldUpdateDenodoLocalDatabase(d.PrefixForUpdate, d.OverwriteMode, localDatabase, qdcDBAsset) {
-			descWithPrefix := utils.AddQDICToStringAsPrefix(d.PrefixForUpdate, qdcDBAsset.Description)
+			descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, qdcDBAsset.Description)
 			putDatabaseInput := models.PutDatabaseInput{
 				DatabaseID:      localDatabase.DatabaseId,
 				Description:     descWithPrefix,
@@ -40,12 +41,16 @@ func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.
 func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[string]qdc.Data) error {
 	for _, tableAsset := range tableAssets {
 		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(tableAsset, "schema3")
+		if utils.IsStringContainJapanese(qdcDatabaseAsset.Name) || utils.IsStringContainJapanese(tableAsset.PhysicalName) {
+			d.Logger.Warning("Skip to update table because API doesn't allow japanese letter as an input. Database: %s, Table: %s", qdcDatabaseAsset.Name, tableAsset.PhysicalName)
+			continue
+		}
 		localViewDetail, err := d.DenodoRepo.GetViewDetails(qdcDatabaseAsset.Name, tableAsset.PhysicalName)
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to GetViewDetails. err: %s", err.Error())
 		}
 		if shouldUpdateDenodoLocalTable(d.PrefixForUpdate, d.OverwriteMode, localViewDetail, tableAsset) {
-			descWithPrefix := utils.AddQDICToStringAsPrefix(d.PrefixForUpdate, tableAsset.Description)
+			descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, tableAsset.Description)
 			updateLocalViewInput := models.UpdateLocalViewInput{
 				ID:              localViewDetail.Id,
 				Description:     descWithPrefix,
@@ -74,6 +79,10 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 	for _, columnAsset := range columnAssets {
 		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(columnAsset, "schema3")
 		qdcTableAsset := utils.GetSpecifiedAssetFromPath(columnAsset, "table")
+		if utils.IsStringContainJapanese(qdcDatabaseAsset.Name) || utils.IsStringContainJapanese(qdcTableAsset.Name) {
+			d.Logger.Warning("Skip to update table because API doesn't allow japanese letter as an input. Database: %s, Table: %s", qdcDatabaseAsset.Name, qdcTableAsset.Name)
+			continue
+		}
 		localViewColumns, err := d.DenodoRepo.GetViewColumns(qdcDatabaseAsset.Name, qdcTableAsset.Name)
 		if err != nil {
 			return err
@@ -81,7 +90,7 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 		localViewColumnMap := convertLocalColumnListToMap(localViewColumns)
 		if localViewColumn, ok := localViewColumnMap[columnAsset.PhysicalName]; ok {
 			if shouldUpdateDenodoLocalColumn(d.PrefixForUpdate, d.OverwriteMode, localViewColumn, columnAsset) {
-				descWithPrefix := utils.AddQDICToStringAsPrefix(d.PrefixForUpdate, columnAsset.Description)
+				descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, columnAsset.Description)
 				updateLocalViewColumnInput := models.UpdateLocalViewFieldInput{
 					DatabaseName:     qdcDatabaseAsset.Name,
 					FieldDescription: descWithPrefix,
