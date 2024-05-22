@@ -265,7 +265,7 @@ func shouldUpdateBqDataset(overwriteMode string, datasetMetadata *bq.DatasetMeta
 	if datasetMetadata.Description == "" && qdcDataset.Description != "" {
 		return true
 	}
-	if strings.HasPrefix(datasetMetadata.Description, "【QDIC】") {
+	if strings.HasPrefix(datasetMetadata.Description, "【QDIC】") && qdcDataset.Description != "" {
 		return true
 	}
 	return false
@@ -275,10 +275,12 @@ func shouldUpdateBqTable(overwriteMode string, tableMetadata *datacatalogpb.Entr
 	if overwriteMode == utils.OverwriteAll && qdcTable.Description != "" {
 		return true
 	}
-	if tableMetadata.BusinessContext.EntryOverview.Overview == "" && qdcTable.Description != "" {
+	if (tableMetadata.BusinessContext == nil || tableMetadata.BusinessContext.EntryOverview.Overview == "") && qdcTable.Description != "" {
 		return true
 	}
-	if strings.HasPrefix(tableMetadata.BusinessContext.EntryOverview.Overview, "【QDIC】") {
+
+	// MEMO: BusinessContext is markdown. Then, it's possible that `<p>` is unexpectedly inserted into the description.
+	if (tableMetadata.BusinessContext == nil || strings.HasPrefix(strings.Replace(tableMetadata.BusinessContext.EntryOverview.Overview, "<p>", "", -1), "【QDIC】")) && qdcTable.Description != "" {
 		return true
 	}
 	return false
@@ -291,7 +293,7 @@ func shouldUpdateBqColumn(overwriteMode string, columnMetadata *bq.FieldSchema, 
 	if columnMetadata.Description == "" && qdcColumn.Description != "" {
 		return true
 	}
-	if strings.HasPrefix(columnMetadata.Description, "【QDIC】") {
+	if strings.HasPrefix(columnMetadata.Description, "【QDIC】") && qdcColumn.Description != "" {
 		return true
 	}
 	return false

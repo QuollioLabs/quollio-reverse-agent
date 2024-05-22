@@ -438,6 +438,45 @@ func TestShouldUpdateBqTable(t *testing.T) {
 			},
 			Expect: true,
 		},
+		{
+			Input: struct {
+				BqAsset       *datacatalogpb.Entry
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
+			}{
+				BqAsset: &datacatalogpb.Entry{
+					Name: "test-test-table11",
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-test-table10",
+					Description:  "test-test-table10",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				BqAsset       *datacatalogpb.Entry
+				QdcDBAsset    qdc.Data
+				OverwriteMode string
+			}{
+				BqAsset: &datacatalogpb.Entry{
+					Name: "test-test-table10",
+					BusinessContext: &datacatalogpb.BusinessContext{
+						EntryOverview: &datacatalogpb.EntryOverview{
+							Overview: "<p>【QDIC】aaa</p>",
+						},
+					},
+				},
+				QdcDBAsset: qdc.Data{
+					PhysicalName: "test-test-table10",
+					Description:  "test-test-table10",
+				},
+				OverwriteMode: utils.OverwriteAll,
+			},
+			Expect: true,
+		},
 	}
 	for _, testCase := range testCases {
 		res := shouldUpdateBqTable(testCase.Input.OverwriteMode, testCase.Input.BqAsset, testCase.Input.QdcDBAsset)
