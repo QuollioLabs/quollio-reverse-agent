@@ -2,7 +2,6 @@ package denodo
 
 import (
 	"database/sql"
-	"fmt"
 	"quollio-reverse-agent/common/utils"
 	"quollio-reverse-agent/repository/denodo/odbc/models"
 	"quollio-reverse-agent/repository/qdc"
@@ -161,7 +160,6 @@ func TestConvertQdcAssetListToMap(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		res := convertQdcAssetListToMap(testCase.Input)
-		fmt.Println(res)
 		for k, v := range res {
 			if d := cmp.Diff(v, testCase.Expect[k]); len(d) != 0 {
 				t.Errorf("want %v but got %v. Diff %s", testCase.Expect[k], v, d)
@@ -433,7 +431,7 @@ func TestShouldUpdateDenodoVdpDatabase(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldUpdateDenodoVdpDatabase(testCase.Input.OverwriteMode, testCase.Input.VdpAsset, testCase.Input.QdcDBAsset)
+		res := shouldUpdateDenodoVdpDatabase("【QDIC】", testCase.Input.OverwriteMode, testCase.Input.VdpAsset, testCase.Input.QdcDBAsset)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %v. Name: %s", testCase.Expect, res, testCase.Input.VdpAsset.DatabaseName)
 		}
@@ -703,7 +701,7 @@ func TestShouldUpdateDenodoVdpTable(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldUpdateDenodoVdpTable(testCase.Input.OverwriteMode, testCase.Input.VdpAsset, testCase.Input.QdcTableAsset)
+		res := shouldUpdateDenodoVdpTable("【QDIC】", testCase.Input.OverwriteMode, testCase.Input.VdpAsset, testCase.Input.QdcTableAsset)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %v. Name: %s", testCase.Expect, res, testCase.Input.VdpAsset.ViewName)
 		}
@@ -973,7 +971,7 @@ func TestShouldUpdateDenodoVdpColumn(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldUpdateDenodoVdpColumn(testCase.Input.OverwriteMode, testCase.Input.VdpAsset, testCase.Input.QdcTableAsset)
+		res := shouldUpdateDenodoVdpColumn("【QDIC】", testCase.Input.OverwriteMode, testCase.Input.VdpAsset, testCase.Input.QdcTableAsset)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %v. Name: %s", testCase.Expect, res, testCase.Input.VdpAsset.ColumnName)
 		}

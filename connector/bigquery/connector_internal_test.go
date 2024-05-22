@@ -200,7 +200,7 @@ func TestShouldUpdateBqDatabase(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldUpdateBqDataset(testCase.Input.OverwriteMode, testCase.Input.BqAsset, testCase.Input.QdcDBAsset)
+		res := shouldUpdateBqDataset("【QDIC】", testCase.Input.OverwriteMode, testCase.Input.BqAsset, testCase.Input.QdcDBAsset)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %v. Name: %s", testCase.Expect, res, testCase.Input.BqAsset.Name)
 		}
@@ -479,7 +479,7 @@ func TestShouldUpdateBqTable(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldUpdateBqTable(testCase.Input.OverwriteMode, testCase.Input.BqAsset, testCase.Input.QdcDBAsset)
+		res := shouldUpdateBqTable("【QDIC】", testCase.Input.OverwriteMode, testCase.Input.BqAsset, testCase.Input.QdcDBAsset)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %v. Name: %s", testCase.Expect, res, testCase.Input.BqAsset.Name)
 		}
@@ -677,7 +677,7 @@ func TestShouldUpdateBqColumn(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldUpdateBqColumn(testCase.Input.OverwriteMode, testCase.Input.BqAsset, testCase.Input.QdcDBAsset)
+		res := shouldUpdateBqColumn("【QDIC】", testCase.Input.OverwriteMode, testCase.Input.BqAsset, testCase.Input.QdcDBAsset)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %v. Name: %s", testCase.Expect, res, testCase.Input.BqAsset.Name)
 		}

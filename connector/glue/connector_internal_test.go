@@ -296,7 +296,7 @@ func TestGetDescUpdatedColumns(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res, b := getDescUpdatedColumns(utils.OverwriteIfEmpty, testCase.Input.GlueTable, testCase.Input.ColumnAssets)
+		res, b := getDescUpdatedColumns("【QDIC】", utils.OverwriteIfEmpty, testCase.Input.GlueTable, testCase.Input.ColumnAssets)
 		if !reflect.DeepEqual(res, testCase.Expect.Columns) || b != testCase.Expect.ShouldBeUpdated {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}
@@ -835,7 +835,7 @@ func TestShouldDatabaseBeUpdated(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldDatabaseBeUpdated(testCase.Input.OverwriteMode, testCase.Input.GlueDB, testCase.Input.DBAsset)
+		res := shouldDatabaseBeUpdated("【QDIC】", testCase.Input.OverwriteMode, testCase.Input.GlueDB, testCase.Input.DBAsset)
 		if res != testCase.Expect {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}
@@ -1105,7 +1105,7 @@ func TestShouldTableBeUpdated(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldTableBeUpdated(testCase.Input.OverwriteMode, &testCase.Input.GlueTable, testCase.Input.TableAsset)
+		res := shouldTableBeUpdated("【QDIC】", testCase.Input.OverwriteMode, &testCase.Input.GlueTable, testCase.Input.TableAsset)
 		if res != testCase.Expect {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}
@@ -1375,7 +1375,7 @@ func TestShouldColumnBeUpdated(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res := shouldColumnBeUpdated(testCase.Input.OverwriteMode, testCase.Input.GlueColumn, testCase.Input.TableAsset)
+		res := shouldColumnBeUpdated("【QDIC】", testCase.Input.OverwriteMode, testCase.Input.GlueColumn, testCase.Input.TableAsset)
 		if res != testCase.Expect {
 			t.Errorf("want %v but got %v.", testCase.Expect, res)
 		}

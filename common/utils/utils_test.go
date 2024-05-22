@@ -112,16 +112,25 @@ func TestSplitArrayToChunks(t *testing.T) {
 
 func TestAddQDICToStringAsPrefix(t *testing.T) {
 	testCases := []struct {
-		Input  string
+		Input struct {
+			PrefixForUpdate string
+			Str             string
+		}
 		Expect string
 	}{
 		{
-			Input:  "test-string",
+			Input: struct {
+				PrefixForUpdate string
+				Str             string
+			}{
+				"【QDIC】",
+				"test-string",
+			},
 			Expect: "【QDIC】test-string",
 		},
 	}
 	for _, testCase := range testCases {
-		res := utils.AddQDICToStringAsPrefix(testCase.Input)
+		res := utils.AddQDICToStringAsPrefix(testCase.Input.PrefixForUpdate, testCase.Input.Str)
 		if res != testCase.Expect {
 			t.Errorf("test failed. want %s, but got %s", testCase.Expect, res)
 		}

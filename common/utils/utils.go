@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	DefaultPrefix    = "【QDIC】" // Default prefix for update
 	OverwriteIfEmpty = "OVERWRITE_IF_EMPTY" // (Default)only assets whose description is empty string or nil will be updated.
 	OverwriteAll     = "OVERWRITE_ALL"      // all asset description will be updated.
 )
@@ -59,6 +60,6 @@ func GetGlobalId(companyId string, clusterId string, dataId string, dataType str
 	return ret
 }
 
-func AddQDICToStringAsPrefix(input string) string {
-	return fmt.Sprint("【QDIC】", input)
+func AddQDICToStringAsPrefix(prefixForUpdate, input string) string {
+	return fmt.Sprint(prefixForUpdate, input)
 }

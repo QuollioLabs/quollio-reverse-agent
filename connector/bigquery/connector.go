@@ -19,10 +19,11 @@ type BigQueryConnector struct {
 	DataplexRepo         dataplex.DataplexClient
 	BigQueryRepo         bigquery.BigQueryClient
 	OverwriteMode        string
+	PrefixForUpdate      string
 	Logger               *logger.BuiltinLogger
 }
 
-func NewBigqueryConnector(overwriteMode string, logger *logger.BuiltinLogger) (BigQueryConnector, error) {
+func NewBigqueryConnector(prefixForUpdate, overwriteMode string, logger *logger.BuiltinLogger) (BigQueryConnector, error) {
 	serviceCreds := os.Getenv("GOOGLE_CLOUD_SERVICE_ACCOUNT_CREDENTIALS")
 	dataplexClient, err := dataplex.NewDataplexClient(serviceCreds)
 	if err != nil {
@@ -42,6 +43,7 @@ func NewBigqueryConnector(overwriteMode string, logger *logger.BuiltinLogger) (B
 		DataplexRepo:         dataplexClient,
 		BigQueryRepo:         bigqueryClient,
 		OverwriteMode:        overwriteMode,
+		PrefixForUpdate:      prefixForUpdate,
 		Logger:               logger,
 	}
 
@@ -122,8 +124,8 @@ func (b *BigQueryConnector) ReflectDatasetDescToBigQuery(schemaAssets []qdc.Data
 			b.Logger.Error("Failed to GetDatasetMetadata. : %s", schemaAsset.PhysicalName)
 			return err
 		}
-		if shouldUpdateBqDataset(b.OverwriteMode, datasetMetadata, schemaAsset) {
-			descWithPrefix := utils.AddQDICToStringAsPrefix(schemaAsset.Description)
+		if shouldUpdateBqDataset(b.PrefixForUpdate, b.OverwriteMode, datasetMetadata, schemaAsset) {
+			descWithPrefix := utils.AddQDICToStringAsPrefix(b.PrefixForUpdate, schemaAsset.Description)
 			_, err = b.BigQueryRepo.UpdateDatasetDescription(schemaAsset.PhysicalName, descWithPrefix)
 			if err != nil {
 				b.Logger.Error("The update was failed.: %s", schemaAsset.PhysicalName)
@@ -153,7 +155,7 @@ func (b *BigQueryConnector) ReflectTableAttributeToBigQuery(tableAssets []qdc.Da
 			return err
 		}
 
-		tableSchemas, shouldSchemaUpdated := GetDescUpdatedSchema(b.OverwriteMode, columnAssets, tableMetadata)
+		tableSchemas, shouldSchemaUpdated := GetDescUpdatedSchema(b.PrefixForUpdate, b.OverwriteMode, columnAssets, tableMetadata)
 		if shouldSchemaUpdated {
 			metadataToUpdate.Schema = tableSchemas
 			// Update table and schema description
@@ -172,9 +174,9 @@ func (b *BigQueryConnector) ReflectTableAttributeToBigQuery(tableAssets []qdc.Da
 			b.Logger.Error("Failed to LookupEntry.: %s", tableAsset.PhysicalName)
 			return err
 		}
-		if shouldUpdateBqTable(b.OverwriteMode, tableAssetEntry, tableAsset) {
+		if shouldUpdateBqTable(b.PrefixForUpdate, b.OverwriteMode, tableAssetEntry, tableAsset) {
 			b.Logger.Debug("The overview of table asset will be updated.: %s", tableAsset.PhysicalName)
-			descWithPrefix := utils.AddQDICToStringAsPrefix(tableAsset.Description)
+			descWithPrefix := utils.AddQDICToStringAsPrefix(b.PrefixForUpdate, tableAsset.Description)
 			_, err := b.DataplexRepo.ModifyEntryOverview(tableAssetEntry.Name, descWithPrefix)
 			if err != nil {
 				b.Logger.Error("The update for the overview of the table asset was failed.: %s", tableAsset.PhysicalName)
@@ -240,15 +242,15 @@ func MapColumnAssetByColumnName(columnAssets []qdc.Data) map[string]qdc.Data {
 	return mapColumnAssetsByColumnName
 }
 
-func GetDescUpdatedSchema(overwriteMode string, columnAssets []qdc.Data, tableMetadata *bq.TableMetadata) ([]*bq.FieldSchema, bool) {
+func GetDescUpdatedSchema(prefixForUpdate, overwriteMode string, columnAssets []qdc.Data, tableMetadata *bq.TableMetadata) ([]*bq.FieldSchema, bool) {
 	var tableSchemas []*bq.FieldSchema
 	shouldSchemaUpdated := false
 	mapColumnAssetByColumnName := MapColumnAssetByColumnName(columnAssets)
 	for _, schemaField := range tableMetadata.Schema {
 		newSchemaField := schemaField // copy
 		if columnAsset, ok := mapColumnAssetByColumnName[newSchemaField.Name]; ok {
-			if shouldUpdateBqColumn(overwriteMode, newSchemaField, columnAsset) {
-				descWithPrefix := utils.AddQDICToStringAsPrefix(columnAsset.Description)
+			if shouldUpdateBqColumn(prefixForUpdate, overwriteMode, newSchemaField, columnAsset) {
+				descWithPrefix := utils.AddQDICToStringAsPrefix(prefixForUpdate, columnAsset.Description)
 				newSchemaField.Description = descWithPrefix
 				shouldSchemaUpdated = true
 			}
@@ -258,20 +260,20 @@ func GetDescUpdatedSchema(overwriteMode string, columnAssets []qdc.Data, tableMe
 	return tableSchemas, shouldSchemaUpdated
 }
 
-func shouldUpdateBqDataset(overwriteMode string, datasetMetadata *bq.DatasetMetadata, qdcDataset qdc.Data) bool {
+func shouldUpdateBqDataset(prefixForUpdate, overwriteMode string, datasetMetadata *bq.DatasetMetadata, qdcDataset qdc.Data) bool {
 	if overwriteMode == utils.OverwriteAll && qdcDataset.Description != "" {
 		return true
 	}
 	if datasetMetadata.Description == "" && qdcDataset.Description != "" {
 		return true
 	}
-	if strings.HasPrefix(datasetMetadata.Description, "【QDIC】") && qdcDataset.Description != "" {
+	if strings.HasPrefix(datasetMetadata.Description, prefixForUpdate) && qdcDataset.Description != "" {
 		return true
 	}
 	return false
 }
 
-func shouldUpdateBqTable(overwriteMode string, tableMetadata *datacatalogpb.Entry, qdcTable qdc.Data) bool {
+func shouldUpdateBqTable(prefixForUpdate, overwriteMode string, tableMetadata *datacatalogpb.Entry, qdcTable qdc.Data) bool {
 	if overwriteMode == utils.OverwriteAll && qdcTable.Description != "" {
 		return true
 	}
@@ -280,20 +282,20 @@ func shouldUpdateBqTable(overwriteMode string, tableMetadata *datacatalogpb.Entr
 	}
 
 	// MEMO: BusinessContext is markdown. Then, it's possible that `<p>` is unexpectedly inserted into the description.
-	if (tableMetadata.BusinessContext == nil || strings.HasPrefix(strings.Replace(tableMetadata.BusinessContext.EntryOverview.Overview, "<p>", "", -1), "【QDIC】")) && qdcTable.Description != "" {
+	if (tableMetadata.BusinessContext == nil || strings.HasPrefix(strings.Replace(tableMetadata.BusinessContext.EntryOverview.Overview, "<p>", "", -1), prefixForUpdate)) && qdcTable.Description != "" {
 		return true
 	}
 	return false
 }
 
-func shouldUpdateBqColumn(overwriteMode string, columnMetadata *bq.FieldSchema, qdcColumn qdc.Data) bool {
+func shouldUpdateBqColumn(prefixForUpdate, overwriteMode string, columnMetadata *bq.FieldSchema, qdcColumn qdc.Data) bool {
 	if overwriteMode == utils.OverwriteAll && qdcColumn.Description != "" {
 		return true
 	}
 	if columnMetadata.Description == "" && qdcColumn.Description != "" {
 		return true
 	}
-	if strings.HasPrefix(columnMetadata.Description, "【QDIC】") && qdcColumn.Description != "" {
+	if strings.HasPrefix(columnMetadata.Description, prefixForUpdate) && qdcColumn.Description != "" {
 		return true
 	}
 	return false
