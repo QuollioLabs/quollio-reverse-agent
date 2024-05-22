@@ -5,12 +5,13 @@ import (
 	"quollio-reverse-agent/repository/denodo/rest"
 	"quollio-reverse-agent/repository/denodo/rest/models"
 	"quollio-reverse-agent/repository/qdc"
+	"strings"
 )
 
 func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.Database, dbAssets map[string]qdc.Data) error {
 	databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, localDatabase.DatabaseName, "schema")
 	if qdcDBAsset, ok := dbAssets[databaseGlobalID]; ok {
-		if shouldUpdateDenodoLocalDatabase(d.OverwriteMode, localDatabase, qdcDBAsset) {
+		if shouldUpdateDenodoLocalDatabase(d.PrefixForUpdate, d.OverwriteMode, localDatabase, qdcDBAsset) {
 			descWithPrefix := utils.AddQDICToStringAsPrefix(d.PrefixForUpdate, qdcDBAsset.Description)
 			putDatabaseInput := models.PutDatabaseInput{
 				DatabaseID:      localDatabase.DatabaseId,
@@ -43,7 +44,7 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 		if err != nil {
 			return err
 		}
-		if shouldUpdateDenodoLocalTable(d.OverwriteMode, localViewDetail, tableAsset) {
+		if shouldUpdateDenodoLocalTable(d.PrefixForUpdate, d.OverwriteMode, localViewDetail, tableAsset) {
 			descWithPrefix := utils.AddQDICToStringAsPrefix(d.PrefixForUpdate, tableAsset.Description)
 			updateLocalViewInput := models.UpdateLocalViewInput{
 				ID:              localViewDetail.Id,
@@ -79,7 +80,7 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 		}
 		localViewColumnMap := convertLocalColumnListToMap(localViewColumns)
 		if localViewColumn, ok := localViewColumnMap[columnAsset.PhysicalName]; ok {
-			if shouldUpdateDenodoLocalColumn(d.OverwriteMode, localViewColumn, columnAsset) {
+			if shouldUpdateDenodoLocalColumn(d.PrefixForUpdate, d.OverwriteMode, localViewColumn, columnAsset) {
 				descWithPrefix := utils.AddQDICToStringAsPrefix(d.PrefixForUpdate, columnAsset.Description)
 				updateLocalViewColumnInput := models.UpdateLocalViewFieldInput{
 					DatabaseName:     qdcDatabaseAsset.Name,
@@ -107,7 +108,7 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 	return nil
 }
 
-func shouldUpdateDenodoLocalDatabase(overwriteMode string, db models.Database, qdcDatabase qdc.Data) bool {
+func shouldUpdateDenodoLocalDatabase(prefixForUpdate, overwriteMode string, db models.Database, qdcDatabase qdc.Data) bool {
 	if overwriteMode == utils.OverwriteAll && qdcDatabase.Description != "" {
 		return true
 	}
@@ -116,10 +117,14 @@ func shouldUpdateDenodoLocalDatabase(overwriteMode string, db models.Database, q
 		return true
 	}
 
+	if strings.HasPrefix(db.DatabaseDescription, prefixForUpdate) && qdcDatabase.Description != "" {
+		return true
+	}
+
 	return false
 }
 
-func shouldUpdateDenodoLocalTable(overwriteMode string, view models.ViewDetail, qdcTable qdc.Data) bool {
+func shouldUpdateDenodoLocalTable(prefixForUpdate, overwriteMode string, view models.ViewDetail, qdcTable qdc.Data) bool {
 	if !view.InLocal {
 		return false
 	}
@@ -131,10 +136,14 @@ func shouldUpdateDenodoLocalTable(overwriteMode string, view models.ViewDetail, 
 		return true
 	}
 
+	if strings.HasPrefix(view.Description, prefixForUpdate) && qdcTable.Description != "" {
+		return true
+	}
+
 	return false
 }
 
-func shouldUpdateDenodoLocalColumn(overwriteMode string, viewColumn models.ViewColumn, qdcColumn qdc.Data) bool {
+func shouldUpdateDenodoLocalColumn(prefixForUpdate, overwriteMode string, viewColumn models.ViewColumn, qdcColumn qdc.Data) bool {
 	if !viewColumn.InLocal {
 		return false
 	}
@@ -143,6 +152,10 @@ func shouldUpdateDenodoLocalColumn(overwriteMode string, viewColumn models.ViewC
 	}
 
 	if viewColumn.Description == "" && qdcColumn.Description != "" {
+		return true
+	}
+
+	if strings.HasPrefix(viewColumn.Description, prefixForUpdate) && qdcColumn.Description != "" {
 		return true
 	}
 

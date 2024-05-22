@@ -277,7 +277,7 @@ func shouldUpdateDenodoVdpDatabase(prefixForUpdate, overwriteMode string, db mod
 	if (db.Description.Valid && db.Description.String == "") && qdcDatabase.Description != "" {
 		return true
 	}
-	if db.Description.Valid && strings.HasPrefix(db.Description.String, prefixForUpdate) {
+	if db.Description.Valid && strings.HasPrefix(db.Description.String, prefixForUpdate) && qdcDatabase.Description != "" {
 		return true
 	}
 	return false
@@ -293,7 +293,7 @@ func shouldUpdateDenodoVdpTable(prefixForUpdate, overwriteMode string, view mode
 	if (view.Description.Valid && view.Description.String == "") && qdcTable.Description != "" {
 		return true
 	}
-	if view.Description.Valid && strings.HasPrefix(view.Description.String, prefixForUpdate) {
+	if view.Description.Valid && strings.HasPrefix(view.Description.String, prefixForUpdate) && qdcTable.Description != "" {
 		return true
 	}
 	return false
@@ -309,7 +309,7 @@ func shouldUpdateDenodoVdpColumn(prefixForUpdate, overwriteMode string, viewColu
 	if (viewColumn.ColumnRemarks.Valid && viewColumn.ColumnRemarks.String == "") && qdcColumn.Description != "" {
 		return true
 	}
-	if viewColumn.ColumnRemarks.Valid && strings.HasPrefix(viewColumn.ColumnRemarks.String, prefixForUpdate) {
+	if viewColumn.ColumnRemarks.Valid && strings.HasPrefix(viewColumn.ColumnRemarks.String, prefixForUpdate) && qdcColumn.Description != "" {
 		return true
 	}
 	return false
