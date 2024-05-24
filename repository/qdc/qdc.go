@@ -228,6 +228,7 @@ func (q *QDCExternalAPI) GetAllRootAssets(serviceName, createdBy string) ([]Data
 					rootAssets = append(rootAssets, assetData)
 				default:
 					if createdBy == assetData.CreatedBy {
+						q.Logger.Debug("Get assets created by : %s", createdBy)
 						rootAssets = append(rootAssets, assetData)
 					}
 				}
