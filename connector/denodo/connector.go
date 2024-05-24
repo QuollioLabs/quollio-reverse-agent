@@ -51,7 +51,7 @@ func NewDenodoConnector(prefixForUpdate, overwriteMode string, logger *logger.Bu
 	}
 
 	denodoRepo := rest.NewDenodoRepo(denodoClientID, denodoClientSecret, denodoRestAPIBaseURL)
-	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret)
+	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret, logger)
 	connector := DenodoConnector{
 		QDCExternalAPIClient: externalAPI,
 		DenodoRepo:           *denodoRepo,

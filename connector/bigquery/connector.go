@@ -39,7 +39,7 @@ func NewBigqueryConnector(prefixForUpdate, overwriteMode string, logger *logger.
 	qdcClientID := os.Getenv("QDC_CLIENT_ID")
 	qdcClientSecret := os.Getenv("QDC_CLIENT_SECRET")
 	assetCreatedBy := os.Getenv("QDC_ASSET_CREATED_BY")
-	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret)
+	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret, logger)
 	connector := BigQueryConnector{
 		QDCExternalAPIClient: externalAPI,
 		DataplexRepo:         dataplexClient,

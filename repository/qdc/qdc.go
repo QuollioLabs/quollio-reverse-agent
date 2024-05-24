@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	neturl "net/url"
+	"quollio-reverse-agent/common/logger"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ type QDCExternalAPI struct {
 	ClientID     string
 	ClientSecret string
 	HttpClient   *http.Client
+	Logger       *logger.BuiltinLogger
 }
 
 type QDCTokenResponse struct {
@@ -71,7 +73,7 @@ type RuleTagIds struct {
 	ChildTagId  string `json:"child_tag_id"`
 }
 
-func NewQDCExternalAPI(baseURL, clientID, clientSecret string) QDCExternalAPI {
+func NewQDCExternalAPI(baseURL, clientID, clientSecret string, logger *logger.BuiltinLogger) QDCExternalAPI {
 	httpClient := retryablehttp.NewClient()
 	httpClient.RetryMax = 10
 	httpClient.Logger = nil
@@ -80,6 +82,7 @@ func NewQDCExternalAPI(baseURL, clientID, clientSecret string) QDCExternalAPI {
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		HttpClient:   httpClient.StandardClient(),
+		Logger:       logger,
 	}
 	return externalAPI
 }
@@ -234,6 +237,7 @@ func (q *QDCExternalAPI) GetAllRootAssets(serviceName, createdBy string) ([]Data
 		case "":
 			return rootAssets, nil
 		default:
+			q.Logger.Debug("GetAllBigQueryRootAssets will continue. lastAssetID: %s", lastAssetID)
 			lastAssetID = assetResponse.LastID
 		}
 	}

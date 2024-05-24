@@ -38,7 +38,7 @@ func NewGlueConnector(prefixForUpdate, overwriteMode string, logger *logger.Buil
 	qdcClientID := os.Getenv("QDC_CLIENT_ID")
 	qdcClientSecret := os.Getenv("QDC_CLIENT_SECRET")
 	assetCreatedBy := os.Getenv("QDC_ASSET_CREATED_BY")
-	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret)
+	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret, logger)
 	connector := GlueConnector{
 		QDCExternalAPIClient: externalAPI,
 		GlueRepo:             glueClient,
