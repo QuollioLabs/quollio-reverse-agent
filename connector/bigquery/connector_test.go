@@ -1,6 +1,7 @@
 package bigquery_test
 
 import (
+	"quollio-reverse-agent/common/utils"
 	"quollio-reverse-agent/connector/bigquery"
 	"quollio-reverse-agent/repository/qdc"
 	"reflect"
@@ -420,7 +421,7 @@ func TestGetDescUpdatedSchema(t *testing.T) {
 					},
 					{
 						Name:        "test-column-name2",
-						Description: "test-description", // This desc is copied from qdc.
+						Description: "【QDIC】test-description", // This desc is copied from qdc.
 					},
 					{
 						Name:        "test-column-name3",
@@ -542,7 +543,7 @@ func TestGetDescUpdatedSchema(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		res, b := bigquery.GetDescUpdatedSchema(testCase.Input.GetAssetByIDsResponseData, testCase.Input.TableMetadata)
+		res, b := bigquery.GetDescUpdatedSchema("【QDIC】", utils.OverwriteIfEmpty, testCase.Input.GetAssetByIDsResponseData, testCase.Input.TableMetadata)
 		if !reflect.DeepEqual(res, testCase.Expect.FieldSchema) || b != testCase.Expect.ShouldBeUpdated {
 			t.Errorf("want %+v, but got %+v", testCase.Expect, res)
 		}

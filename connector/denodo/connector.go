@@ -3,6 +3,7 @@ package denodo
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"quollio-reverse-agent/common/logger"
 	"quollio-reverse-agent/common/utils"
@@ -18,10 +19,12 @@ type DenodoConnector struct {
 	DenodoDBClient       *odbc.Client
 	CompanyID            string
 	DenodoHostName       string
+	OverwriteMode        string
+	PrefixForUpdate      string
 	Logger               *logger.BuiltinLogger
 }
 
-func NewDenodoConnector(logger *logger.BuiltinLogger) (DenodoConnector, error) {
+func NewDenodoConnector(prefixForUpdate, overwriteMode string, logger *logger.BuiltinLogger) (DenodoConnector, error) {
 
 	qdcBaseURL := os.Getenv("QDC_BASE_URL")
 	qdcClientID := os.Getenv("QDC_CLIENT_ID")
@@ -53,6 +56,8 @@ func NewDenodoConnector(logger *logger.BuiltinLogger) (DenodoConnector, error) {
 		DenodoDBClient:       client,
 		CompanyID:            companyId,
 		DenodoHostName:       denodoHostName,
+		OverwriteMode:        overwriteMode,
+		PrefixForUpdate:      prefixForUpdate,
 		Logger:               logger,
 	}
 	return connector, nil
@@ -167,8 +172,9 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 		d.Logger.Info("Start to update denodo database assets")
 		databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, vdpDatabase.DatabaseName, "schema")
 		if qdcDatabaseAsset, ok := qdcRootAssetsMap[databaseGlobalID]; ok {
-			if shouldUpdateDenodoVdpDatabase(vdpDatabase, qdcDatabaseAsset) {
-				err := d.DenodoDBClient.UpdateVdpDatabaseDesc(vdpDatabase.DatabaseName, qdcDatabaseAsset.Description)
+			if shouldUpdateDenodoVdpDatabase(d.PrefixForUpdate, d.OverwriteMode, vdpDatabase, qdcDatabaseAsset) {
+				descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, qdcDatabaseAsset.Description)
+				err := d.DenodoDBClient.UpdateVdpDatabaseDesc(vdpDatabase.DatabaseName, descWithPrefix)
 				if err != nil {
 					return err
 				}
@@ -185,8 +191,9 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 			tableFQN := fmt.Sprint(vdpDatabase.DatabaseName, vdpTableAsset.ViewName)
 			tableGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, tableFQN, "table")
 			if qdcTableAsset, ok := qdcTableAssetsMap[tableGlobalID]; ok {
-				if shouldUpdateDenodoVdpTable(vdpTableAsset, qdcTableAsset) {
-					err := d.DenodoDBClient.UpdateVdpTableDesc(vdpTableAsset, qdcTableAsset.Description)
+				if shouldUpdateDenodoVdpTable(d.PrefixForUpdate, d.OverwriteMode, vdpTableAsset, qdcTableAsset) {
+					descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, qdcTableAsset.Description)
+					err := d.DenodoDBClient.UpdateVdpTableDesc(vdpTableAsset, descWithPrefix)
 					if err != nil {
 						return err
 					}
@@ -204,17 +211,18 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 			columnGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, columnFQN, "column")
 			if qdcColumnAsset, ok := qdcColumnAssetsMap[columnGlobalID]; ok {
 				if vdpColumnAsset.ViewType != 1 {
-					d.Logger.Debug("Only derived view will be updated. database name: %s, table name: %s column name: %s", vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
+					d.Logger.Debug("Skip update view. only derived view will be updated. database name: %s, table name: %s column name: %s", vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
 					continue
 				}
-				if shouldUpdateDenodoVdpColumn(vdpColumnAsset, qdcColumnAsset) {
-					err := d.DenodoDBClient.UpdateVdpTableColumnDesc(vdpColumnAsset, qdcColumnAsset.Description)
+				if shouldUpdateDenodoVdpColumn(d.PrefixForUpdate, d.OverwriteMode, vdpColumnAsset, qdcColumnAsset) {
+					descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, qdcColumnAsset.Description)
+					err := d.DenodoDBClient.UpdateVdpTableColumnDesc(vdpColumnAsset, descWithPrefix)
 					if err != nil {
 						return err
 					}
+					d.Logger.Debug("Updated column description. database name: %s. table name: %s. column name: %s", vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
 				}
 			}
-			d.Logger.Debug("Updated column description. database name: %s. table name: %s. column name: %s", vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
 		}
 	}
 	return nil
@@ -259,31 +267,49 @@ func convertQdcAssetListToMap(qdcAssetList []qdc.Data) map[string]qdc.Data {
 	return mapQDCAsset
 }
 
-func shouldUpdateDenodoVdpDatabase(db models.GetDatabasesResult, qdcDatabase qdc.Data) bool {
+func shouldUpdateDenodoVdpDatabase(prefixForUpdate, overwriteMode string, db models.GetDatabasesResult, qdcDatabase qdc.Data) bool {
+	if overwriteMode == utils.OverwriteAll && qdcDatabase.Description != "" {
+		return true
+	}
 	if !db.Description.Valid && qdcDatabase.Description != "" {
 		return true
 	}
 	if (db.Description.Valid && db.Description.String == "") && qdcDatabase.Description != "" {
 		return true
 	}
+	if db.Description.Valid && strings.HasPrefix(db.Description.String, prefixForUpdate) && qdcDatabase.Description != "" {
+		return true
+	}
 	return false
 }
 
-func shouldUpdateDenodoVdpTable(view models.GetViewsResult, qdcTable qdc.Data) bool {
+func shouldUpdateDenodoVdpTable(prefixForUpdate, overwriteMode string, view models.GetViewsResult, qdcTable qdc.Data) bool {
+	if overwriteMode == utils.OverwriteAll && qdcTable.Description != "" {
+		return true
+	}
 	if !view.Description.Valid && qdcTable.Description != "" {
 		return true
 	}
 	if (view.Description.Valid && view.Description.String == "") && qdcTable.Description != "" {
 		return true
 	}
+	if view.Description.Valid && strings.HasPrefix(view.Description.String, prefixForUpdate) && qdcTable.Description != "" {
+		return true
+	}
 	return false
 }
 
-func shouldUpdateDenodoVdpColumn(viewColumn models.GetViewColumnsResult, qdcColumn qdc.Data) bool {
+func shouldUpdateDenodoVdpColumn(prefixForUpdate, overwriteMode string, viewColumn models.GetViewColumnsResult, qdcColumn qdc.Data) bool {
+	if overwriteMode == utils.OverwriteAll && qdcColumn.Description != "" {
+		return true
+	}
 	if !viewColumn.ColumnRemarks.Valid && qdcColumn.Description != "" {
 		return true
 	}
 	if (viewColumn.ColumnRemarks.Valid && viewColumn.ColumnRemarks.String == "") && qdcColumn.Description != "" {
+		return true
+	}
+	if viewColumn.ColumnRemarks.Valid && strings.HasPrefix(viewColumn.ColumnRemarks.String, prefixForUpdate) && qdcColumn.Description != "" {
 		return true
 	}
 	return false

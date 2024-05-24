@@ -109,3 +109,70 @@ func TestSplitArrayToChunks(t *testing.T) {
 		}
 	}
 }
+
+func TestAddPrefixToStringIfNotHas(t *testing.T) {
+	testCases := []struct {
+		Input struct {
+			PrefixForUpdate string
+			Str             string
+		}
+		Expect string
+	}{
+		{
+			Input: struct {
+				PrefixForUpdate string
+				Str             string
+			}{
+				"【QDIC】",
+				"test-string",
+			},
+			Expect: "【QDIC】test-string",
+		},
+		{
+			Input: struct {
+				PrefixForUpdate string
+				Str             string
+			}{
+				"【QDIC】",
+				"【QDIC】test-string",
+			},
+			Expect: "【QDIC】test-string",
+		},
+	}
+	for _, testCase := range testCases {
+		res := utils.AddPrefixToStringIfNotHas(testCase.Input.PrefixForUpdate, testCase.Input.Str)
+		if res != testCase.Expect {
+			t.Errorf("test failed. want %s, but got %s", testCase.Expect, res)
+		}
+	}
+}
+
+func TestIsStringContainJapanese(t *testing.T) {
+	testCases := []struct {
+		Input  string
+		Expect bool
+	}{
+		{
+			Input:  "あ",
+			Expect: true,
+		},
+		{
+			Input:  "カ",
+			Expect: true,
+		},
+		{
+			Input:  "他",
+			Expect: true,
+		},
+		{
+			Input:  "aioueo",
+			Expect: false,
+		},
+	}
+	for _, testCase := range testCases {
+		res := utils.IsStringContainJapanese(testCase.Input)
+		if res != testCase.Expect {
+			t.Errorf("test failed. want %v, but got %v", testCase.Expect, res)
+		}
+	}
+}
