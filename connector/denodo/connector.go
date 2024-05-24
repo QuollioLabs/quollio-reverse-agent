@@ -173,7 +173,8 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 		databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, vdpDatabase.DatabaseName, "schema")
 		if qdcDatabaseAsset, ok := qdcRootAssetsMap[databaseGlobalID]; ok {
 			if shouldUpdateDenodoVdpDatabase(d.PrefixForUpdate, d.OverwriteMode, vdpDatabase, qdcDatabaseAsset) {
-				descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, qdcDatabaseAsset.Description)
+				descForUpdate := genUpdateString(qdcDatabaseAsset.LogicalName, qdcDatabaseAsset.Description)
+				descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, descForUpdate)
 				err := d.DenodoDBClient.UpdateVdpDatabaseDesc(vdpDatabase.DatabaseName, descWithPrefix)
 				if err != nil {
 					return err
@@ -192,7 +193,8 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 			tableGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, tableFQN, "table")
 			if qdcTableAsset, ok := qdcTableAssetsMap[tableGlobalID]; ok {
 				if shouldUpdateDenodoVdpTable(d.PrefixForUpdate, d.OverwriteMode, vdpTableAsset, qdcTableAsset) {
-					descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, qdcTableAsset.Description)
+					descForUpdate := genUpdateString(qdcTableAsset.LogicalName, qdcTableAsset.Description)
+					descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, descForUpdate)
 					err := d.DenodoDBClient.UpdateVdpTableDesc(vdpTableAsset, descWithPrefix)
 					if err != nil {
 						return err
@@ -215,7 +217,8 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 					continue
 				}
 				if shouldUpdateDenodoVdpColumn(d.PrefixForUpdate, d.OverwriteMode, vdpColumnAsset, qdcColumnAsset) {
-					descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, qdcColumnAsset.Description)
+					descForUpdate := genUpdateString(qdcColumnAsset.LogicalName, qdcColumnAsset.Description)
+					descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, descForUpdate)
 					err := d.DenodoDBClient.UpdateVdpTableColumnDesc(vdpColumnAsset, descWithPrefix)
 					if err != nil {
 						return err
@@ -313,4 +316,9 @@ func shouldUpdateDenodoVdpColumn(prefixForUpdate, overwriteMode string, viewColu
 		return true
 	}
 	return false
+}
+
+func genUpdateString(logicalName, description string) string {
+	s := fmt.Sprintf("【項目名称】%s\n【説明】%s", logicalName, description)
+	return s
 }

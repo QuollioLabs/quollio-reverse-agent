@@ -13,7 +13,8 @@ func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.
 	databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, localDatabase.DatabaseName, "schema")
 	if qdcDBAsset, ok := dbAssets[databaseGlobalID]; ok {
 		if shouldUpdateDenodoLocalDatabase(d.PrefixForUpdate, d.OverwriteMode, localDatabase, qdcDBAsset) {
-			descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, qdcDBAsset.Description)
+			descForUpdate := genUpdateString(qdcDBAsset.LogicalName, qdcDBAsset.Description)
+			descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, descForUpdate)
 			putDatabaseInput := models.PutDatabaseInput{
 				DatabaseID:      localDatabase.DatabaseId,
 				Description:     descWithPrefix,
@@ -50,7 +51,8 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 			return fmt.Errorf("Failed to GetViewDetails. err: %s", err.Error())
 		}
 		if shouldUpdateDenodoLocalTable(d.PrefixForUpdate, d.OverwriteMode, localViewDetail, tableAsset) {
-			descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, tableAsset.Description)
+			descForUpdate := genUpdateString(tableAsset.LogicalName, tableAsset.Description)
+			descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, descForUpdate)
 			updateLocalViewInput := models.UpdateLocalViewInput{
 				ID:              localViewDetail.Id,
 				Description:     descWithPrefix,
@@ -90,7 +92,8 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 		localViewColumnMap := convertLocalColumnListToMap(localViewColumns)
 		if localViewColumn, ok := localViewColumnMap[columnAsset.PhysicalName]; ok {
 			if shouldUpdateDenodoLocalColumn(d.PrefixForUpdate, d.OverwriteMode, localViewColumn, columnAsset) {
-				descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, columnAsset.Description)
+				descForUpdate := genUpdateString(columnAsset.LogicalName, columnAsset.Description)
+				descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, descForUpdate)
 				updateLocalViewColumnInput := models.UpdateLocalViewFieldInput{
 					DatabaseName:     qdcDatabaseAsset.Name,
 					FieldDescription: descWithPrefix,
