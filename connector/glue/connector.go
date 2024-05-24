@@ -18,6 +18,7 @@ import (
 type GlueConnector struct {
 	QDCExternalAPIClient qdc.QDCExternalAPI
 	GlueRepo             glue.GlueClient
+	AssetCreatedBy       string
 	AthenaAccountID      string
 	OverwriteMode        string
 	PrefixForUpdate      string
@@ -36,10 +37,12 @@ func NewGlueConnector(prefixForUpdate, overwriteMode string, logger *logger.Buil
 	qdcBaseURL := os.Getenv("QDC_BASE_URL")
 	qdcClientID := os.Getenv("QDC_CLIENT_ID")
 	qdcClientSecret := os.Getenv("QDC_CLIENT_SECRET")
+	assetCreatedBy := os.Getenv("QDC_ASSET_CREATED_BY")
 	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret)
 	connector := GlueConnector{
 		QDCExternalAPIClient: externalAPI,
 		GlueRepo:             glueClient,
+		AssetCreatedBy:       assetCreatedBy,
 		AthenaAccountID:      athenaAccountID,
 		OverwriteMode:        overwriteMode,
 		PrefixForUpdate:      prefixForUpdate,
@@ -47,34 +50,6 @@ func NewGlueConnector(prefixForUpdate, overwriteMode string, logger *logger.Buil
 	}
 
 	return connector, nil
-}
-
-func (g *GlueConnector) GetAllAthenaRootAssets() ([]qdc.Data, error) {
-	var rootAssets []qdc.Data
-
-	var lastAssetID string
-	for {
-		assetResponse, err := g.QDCExternalAPIClient.GetAssetByType("schema", lastAssetID)
-		if err != nil {
-			g.Logger.Error("Failed to GetAssetByType. lastAssetID: %s", lastAssetID)
-			return nil, err
-		}
-		for _, assetData := range assetResponse.Data {
-			switch assetData.ServiceName {
-			case "athena":
-				rootAssets = append(rootAssets, assetData)
-			default:
-				continue
-			}
-		}
-		switch assetResponse.LastID {
-		case "":
-			return rootAssets, nil
-		default:
-			g.Logger.Debug("GetAllAthenaRootAssets will continue. lastAssetID: %s", lastAssetID)
-			lastAssetID = assetResponse.LastID
-		}
-	}
 }
 
 func (g *GlueConnector) GetAllChildAssetsByID(parentAssets []qdc.Data) ([]qdc.Data, error) {
@@ -212,7 +187,7 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 
 func (g *GlueConnector) ReflectMetadataToDataCatalog() error {
 	g.Logger.Info("List Athena database assets")
-	rootAssets, err := g.GetAllAthenaRootAssets()
+	rootAssets, err := g.QDCExternalAPIClient.GetAllRootAssets("athena", g.AssetCreatedBy)
 	if err != nil {
 		g.Logger.Error("Failed to GetAllAthenaRootAssets: %s", err.Error())
 		return err

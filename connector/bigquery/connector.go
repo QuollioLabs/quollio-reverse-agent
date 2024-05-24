@@ -18,6 +18,7 @@ type BigQueryConnector struct {
 	QDCExternalAPIClient qdc.QDCExternalAPI
 	DataplexRepo         dataplex.DataplexClient
 	BigQueryRepo         bigquery.BigQueryClient
+	AssetCreatedBy       string
 	OverwriteMode        string
 	PrefixForUpdate      string
 	Logger               *logger.BuiltinLogger
@@ -37,45 +38,19 @@ func NewBigqueryConnector(prefixForUpdate, overwriteMode string, logger *logger.
 	qdcBaseURL := os.Getenv("QDC_BASE_URL")
 	qdcClientID := os.Getenv("QDC_CLIENT_ID")
 	qdcClientSecret := os.Getenv("QDC_CLIENT_SECRET")
+	assetCreatedBy := os.Getenv("QDC_ASSET_CREATED_BY")
 	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret)
 	connector := BigQueryConnector{
 		QDCExternalAPIClient: externalAPI,
 		DataplexRepo:         dataplexClient,
 		BigQueryRepo:         bigqueryClient,
+		AssetCreatedBy:       assetCreatedBy,
 		OverwriteMode:        overwriteMode,
 		PrefixForUpdate:      prefixForUpdate,
 		Logger:               logger,
 	}
 
 	return connector, nil
-}
-
-func (b *BigQueryConnector) GetAllBigQueryRootAssets() ([]qdc.Data, error) {
-	var rootAssets []qdc.Data
-
-	var lastAssetID string
-	for {
-		assetResponse, err := b.QDCExternalAPIClient.GetAssetByType("schema", lastAssetID)
-		if err != nil {
-			b.Logger.Error("Failed to GetAssetByType. lastAssetID: %s", lastAssetID)
-			return nil, err
-		}
-		for _, assetData := range assetResponse.Data {
-			switch assetData.ServiceName {
-			case "bigquery":
-				rootAssets = append(rootAssets, assetData)
-			default:
-				continue
-			}
-		}
-		switch assetResponse.LastID {
-		case "":
-			return rootAssets, nil
-		default:
-			b.Logger.Debug("GetAllBigQueryRootAssets will continue. lastAssetID: %s", lastAssetID)
-			lastAssetID = assetResponse.LastID
-		}
-	}
 }
 
 func (b *BigQueryConnector) GetAllChildAssetsByID(parentAssets []qdc.Data) ([]qdc.Data, error) {
@@ -190,7 +165,7 @@ func (b *BigQueryConnector) ReflectTableAttributeToBigQuery(tableAssets []qdc.Da
 
 func (b *BigQueryConnector) ReflectMetadataToDataCatalog() error {
 	b.Logger.Info("List BigQuery project assets")
-	rootAssets, err := b.GetAllBigQueryRootAssets()
+	rootAssets, err := b.QDCExternalAPIClient.GetAllRootAssets("bigquery", b.AssetCreatedBy)
 	if err != nil {
 		b.Logger.Error("Failed to GetAllBigQueryRootAssets: %s", err.Error())
 		return err

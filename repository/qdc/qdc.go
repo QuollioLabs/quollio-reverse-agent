@@ -205,3 +205,36 @@ func (q *QDCExternalAPI) GetAssetByType(assetType, lastID string) (GetAssetByTyp
 	}
 	return getAssetByTypeResponse, nil
 }
+
+func (q *QDCExternalAPI) GetAllRootAssets(serviceName, createdBy string) ([]Data, error) {
+	var rootAssets []Data
+
+	var lastAssetID string
+	for {
+		assetResponse, err := q.GetAssetByType("schema", lastAssetID)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to GetAssetByType. lastAssetID: %s", lastAssetID)
+		}
+		for _, assetData := range assetResponse.Data {
+			switch assetData.ServiceName {
+			case serviceName:
+				switch createdBy {
+				case "":
+					rootAssets = append(rootAssets, assetData)
+				default:
+					if createdBy == assetData.CreatedBy {
+						rootAssets = append(rootAssets, assetData)
+					}
+				}
+			default:
+				continue
+			}
+		}
+		switch assetResponse.LastID {
+		case "":
+			return rootAssets, nil
+		default:
+			lastAssetID = assetResponse.LastID
+		}
+	}
+}
