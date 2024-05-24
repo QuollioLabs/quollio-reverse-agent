@@ -6,7 +6,9 @@ import (
 	"io"
 	"net/http"
 	neturl "net/url"
+	"os"
 	"quollio-reverse-agent/common/logger"
+	"quollio-reverse-agent/utils"
 	"strings"
 	"time"
 
@@ -241,4 +243,43 @@ func (q *QDCExternalAPI) GetAllRootAssets(serviceName, createdBy string) ([]Data
 			lastAssetID = assetResponse.LastID
 		}
 	}
+}
+
+func (q *QDCExternalAPI) GetAllChildAssetsByID(parentAssets []Data) ([]Data, error) {
+	var childAssets []Data
+
+	for _, parentAsset := range parentAssets {
+		childAssetIdChunks := utils.SplitArrayToChunks(parentAsset.ChildAssetIds, 100) // MEMO: 100 is the max size of the each array.
+		for _, childAssetIdChunk := range childAssetIdChunks {
+			assets, err := q.GetAssetByIDs(childAssetIdChunk)
+			if err != nil {
+				return nil, err
+			}
+			childAssets = append(childAssets, assets.Data...)
+		}
+	}
+	if os.Getenv("LOG_LEVEL") == "DEBUG" {
+		q.Logger.Debug("The number of child assets is %v", len(childAssets))
+		var childAssetIds []string
+		for _, childAsset := range childAssets {
+			childAssetIds = append(childAssetIds, childAsset.ID)
+		}
+		q.Logger.Debug("The child asset ids are %v", childAssetIds)
+	}
+	return childAssets, nil
+}
+
+func (q *QDCExternalAPI) GetChildAssetsByParentAsset(assets Data) ([]Data, error) {
+	var childAssets []Data
+
+	childAssetIdChunks := utils.SplitArrayToChunks(assets.ChildAssetIds, 100) // MEMO: 100 is the max size of the each array.
+	for _, childAssetIdChunk := range childAssetIdChunks {
+		assets, err := q.GetAssetByIDs(childAssetIdChunk)
+		if err != nil {
+			return nil, err
+		}
+		childAssets = append(childAssets, assets.Data...)
+	}
+	q.Logger.Debug("The number of child asset chunks is %v", len(childAssets))
+	return childAssets, nil
 }

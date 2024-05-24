@@ -66,30 +66,6 @@ func NewDenodoConnector(prefixForUpdate, overwriteMode string, logger *logger.Bu
 	return connector, nil
 }
 
-func (d *DenodoConnector) GetAllChildAssetsByID(parentAssets []qdc.Data) ([]qdc.Data, error) {
-	var childAssets []qdc.Data
-
-	for _, parentAsset := range parentAssets {
-		childAssetIdChunks := utils.SplitArrayToChunks(parentAsset.ChildAssetIds, 100) // MEMO: 100 is the max size of the each array.
-		for _, childAssetIdChunk := range childAssetIdChunks {
-			assets, err := d.QDCExternalAPIClient.GetAssetByIDs(childAssetIdChunk)
-			if err != nil {
-				return nil, err
-			}
-			childAssets = append(childAssets, assets.Data...)
-		}
-	}
-	if os.Getenv("LOG_LEVEL") == "DEBUG" {
-		d.Logger.Debug("The number of child assets is %v", len(childAssets))
-		var childAssetIds []string
-		for _, childAsset := range childAssets {
-			childAssetIds = append(childAssetIds, childAsset.ID)
-		}
-		d.Logger.Debug("The child asset ids are %v", childAssetIds)
-	}
-	return childAssets, nil
-}
-
 func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 	d.Logger.Info("Get Denodo assets from QDIC")
 	rootAssets, err := d.QDCExternalAPIClient.GetAllRootAssets("denodo", d.AssetCreatedBy)
@@ -99,14 +75,14 @@ func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 	}
 	rootAssetsMap := convertQdcAssetListToMap(rootAssets)
 
-	tableAssets, err := d.GetAllChildAssetsByID(rootAssets)
+	tableAssets, err := d.QDCExternalAPIClient.GetAllChildAssetsByID(rootAssets)
 	if err != nil {
 		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
 		return err
 	}
 	tableAssetsMap := convertQdcAssetListToMap(tableAssets)
 
-	columnAssets, err := d.GetAllChildAssetsByID(tableAssets)
+	columnAssets, err := d.QDCExternalAPIClient.GetAllChildAssetsByID(tableAssets)
 	if err != nil {
 		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
 		return err

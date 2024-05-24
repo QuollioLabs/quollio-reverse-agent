@@ -53,45 +53,6 @@ func NewBigqueryConnector(prefixForUpdate, overwriteMode string, logger *logger.
 	return connector, nil
 }
 
-func (b *BigQueryConnector) GetAllChildAssetsByID(parentAssets []qdc.Data) ([]qdc.Data, error) {
-	var childAssets []qdc.Data
-
-	for _, parentAsset := range parentAssets {
-		childAssetIdChunks := utils.SplitArrayToChunks(parentAsset.ChildAssetIds, 100) // MEMO: 100 is the max size of the each array.
-		for _, childAssetIdChunk := range childAssetIdChunks {
-			assets, err := b.QDCExternalAPIClient.GetAssetByIDs(childAssetIdChunk)
-			if err != nil {
-				return nil, err
-			}
-			childAssets = append(childAssets, assets.Data...)
-		}
-	}
-	if os.Getenv("LOG_LEVEL") == "DEBUG" {
-		b.Logger.Debug("The number of child assets is %v", len(childAssets))
-		var childAssetIds []string
-		for _, childAsset := range childAssets {
-			childAssetIds = append(childAssetIds, childAsset.ID)
-		}
-		b.Logger.Debug("The child asset ids are %v", childAssetIds)
-	}
-	return childAssets, nil
-}
-
-func (b *BigQueryConnector) GetChildAssetsByParentAsset(assets qdc.Data) ([]qdc.Data, error) {
-	var childAssets []qdc.Data
-
-	childAssetIdChunks := utils.SplitArrayToChunks(assets.ChildAssetIds, 100) // MEMO: 100 is the max size of the each array.
-	for _, childAssetIdChunk := range childAssetIdChunks {
-		assets, err := b.QDCExternalAPIClient.GetAssetByIDs(childAssetIdChunk)
-		if err != nil {
-			return nil, err
-		}
-		childAssets = append(childAssets, assets.Data...)
-	}
-	b.Logger.Debug("The number of child asset chunks is %v", len(childAssets))
-	return childAssets, nil
-}
-
 func (b *BigQueryConnector) ReflectDatasetDescToBigQuery(schemaAssets []qdc.Data) error {
 	for _, schemaAsset := range schemaAssets {
 		datasetMetadata, err := b.BigQueryRepo.GetDatasetMetadata(schemaAsset.PhysicalName)
@@ -124,7 +85,7 @@ func (b *BigQueryConnector) ReflectTableAttributeToBigQuery(tableAssets []qdc.Da
 			return err
 		}
 
-		columnAssets, err := b.GetChildAssetsByParentAsset(tableAsset)
+		columnAssets, err := b.QDCExternalAPIClient.GetChildAssetsByParentAsset(tableAsset)
 		if err != nil {
 			b.Logger.Error("Failed to GetChildAssetsByParentAsset: %s", tableMetadata.Name)
 			return err
@@ -172,7 +133,7 @@ func (b *BigQueryConnector) ReflectMetadataToDataCatalog() error {
 	}
 
 	b.Logger.Info("List BigQuery schema assets")
-	schemaAssets, err := b.GetAllChildAssetsByID(rootAssets)
+	schemaAssets, err := b.QDCExternalAPIClient.GetAllChildAssetsByID(rootAssets)
 	if err != nil {
 		b.Logger.Error("Failed to GetAllChildAssetsByID for schemaAssets: %s", err.Error())
 		return err
@@ -185,7 +146,7 @@ func (b *BigQueryConnector) ReflectMetadataToDataCatalog() error {
 	}
 
 	b.Logger.Info("List BigQuery table assets")
-	tableAssets, err := b.GetAllChildAssetsByID(schemaAssets)
+	tableAssets, err := b.QDCExternalAPIClient.GetAllChildAssetsByID(schemaAssets)
 	if err != nil {
 		b.Logger.Error("Failed to GetAllChildAssetsByID: %s", err.Error())
 		return err
