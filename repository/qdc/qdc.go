@@ -6,6 +6,9 @@ import (
 	"io"
 	"net/http"
 	neturl "net/url"
+	"os"
+	"quollio-reverse-agent/common/logger"
+	"quollio-reverse-agent/utils"
 	"strings"
 	"time"
 
@@ -17,6 +20,7 @@ type QDCExternalAPI struct {
 	ClientID     string
 	ClientSecret string
 	HttpClient   *http.Client
+	Logger       *logger.BuiltinLogger
 }
 
 type QDCTokenResponse struct {
@@ -71,7 +75,7 @@ type RuleTagIds struct {
 	ChildTagId  string `json:"child_tag_id"`
 }
 
-func NewQDCExternalAPI(baseURL, clientID, clientSecret string) QDCExternalAPI {
+func NewQDCExternalAPI(baseURL, clientID, clientSecret string, logger *logger.BuiltinLogger) QDCExternalAPI {
 	httpClient := retryablehttp.NewClient()
 	httpClient.RetryMax = 10
 	httpClient.Logger = nil
@@ -80,6 +84,7 @@ func NewQDCExternalAPI(baseURL, clientID, clientSecret string) QDCExternalAPI {
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		HttpClient:   httpClient.StandardClient(),
+		Logger:       logger,
 	}
 	return externalAPI
 }
@@ -204,4 +209,78 @@ func (q *QDCExternalAPI) GetAssetByType(assetType, lastID string) (GetAssetByTyp
 		return GetAssetByTypeResponse{}, err
 	}
 	return getAssetByTypeResponse, nil
+}
+
+func (q *QDCExternalAPI) GetAllRootAssets(serviceName, createdBy string) ([]Data, error) {
+	var rootAssets []Data
+
+	var lastAssetID string
+	for {
+		assetResponse, err := q.GetAssetByType("schema", lastAssetID)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to GetAssetByType. lastAssetID: %s", lastAssetID)
+		}
+		for _, assetData := range assetResponse.Data {
+			switch assetData.ServiceName {
+			case serviceName:
+				switch createdBy {
+				case "":
+					rootAssets = append(rootAssets, assetData)
+				default:
+					if createdBy == assetData.CreatedBy {
+						q.Logger.Debug("Get assets created by : %s", createdBy)
+						rootAssets = append(rootAssets, assetData)
+					}
+				}
+			default:
+				continue
+			}
+		}
+		switch assetResponse.LastID {
+		case "":
+			return rootAssets, nil
+		default:
+			q.Logger.Debug("GetAllBigQueryRootAssets will continue. lastAssetID: %s", lastAssetID)
+			lastAssetID = assetResponse.LastID
+		}
+	}
+}
+
+func (q *QDCExternalAPI) GetAllChildAssetsByID(parentAssets []Data) ([]Data, error) {
+	var childAssets []Data
+
+	for _, parentAsset := range parentAssets {
+		childAssetIdChunks := utils.SplitArrayToChunks(parentAsset.ChildAssetIds, 100) // MEMO: 100 is the max size of the each array.
+		for _, childAssetIdChunk := range childAssetIdChunks {
+			assets, err := q.GetAssetByIDs(childAssetIdChunk)
+			if err != nil {
+				return nil, err
+			}
+			childAssets = append(childAssets, assets.Data...)
+		}
+	}
+	if os.Getenv("LOG_LEVEL") == "DEBUG" {
+		q.Logger.Debug("The number of child assets is %v", len(childAssets))
+		var childAssetIds []string
+		for _, childAsset := range childAssets {
+			childAssetIds = append(childAssetIds, childAsset.ID)
+		}
+		q.Logger.Debug("The child asset ids are %v", childAssetIds)
+	}
+	return childAssets, nil
+}
+
+func (q *QDCExternalAPI) GetChildAssetsByParentAsset(assets Data) ([]Data, error) {
+	var childAssets []Data
+
+	childAssetIdChunks := utils.SplitArrayToChunks(assets.ChildAssetIds, 100) // MEMO: 100 is the max size of the each array.
+	for _, childAssetIdChunk := range childAssetIdChunks {
+		assets, err := q.GetAssetByIDs(childAssetIdChunk)
+		if err != nil {
+			return nil, err
+		}
+		childAssets = append(childAssets, assets.Data...)
+	}
+	q.Logger.Debug("The number of child asset chunks is %v", len(childAssets))
+	return childAssets, nil
 }

@@ -19,6 +19,7 @@ type DenodoConnector struct {
 	DenodoDBClient       *odbc.Client
 	CompanyID            string
 	DenodoHostName       string
+	AssetCreatedBy       string
 	OverwriteMode        string
 	PrefixForUpdate      string
 	Logger               *logger.BuiltinLogger
@@ -29,6 +30,7 @@ func NewDenodoConnector(prefixForUpdate, overwriteMode string, logger *logger.Bu
 	qdcBaseURL := os.Getenv("QDC_BASE_URL")
 	qdcClientID := os.Getenv("QDC_CLIENT_ID")
 	qdcClientSecret := os.Getenv("QDC_CLIENT_SECRET")
+	assetCreatedBy := os.Getenv("QDC_ASSET_CREATED_BY")
 	companyId := os.Getenv("COMPANY_ID")
 
 	denodoClientID := os.Getenv("DENODO_CLIENT_ID")
@@ -49,13 +51,14 @@ func NewDenodoConnector(prefixForUpdate, overwriteMode string, logger *logger.Bu
 	}
 
 	denodoRepo := rest.NewDenodoRepo(denodoClientID, denodoClientSecret, denodoRestAPIBaseURL)
-	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret)
+	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret, logger)
 	connector := DenodoConnector{
 		QDCExternalAPIClient: externalAPI,
 		DenodoRepo:           *denodoRepo,
 		DenodoDBClient:       client,
 		CompanyID:            companyId,
 		DenodoHostName:       denodoHostName,
+		AssetCreatedBy:       assetCreatedBy,
 		OverwriteMode:        overwriteMode,
 		PrefixForUpdate:      prefixForUpdate,
 		Logger:               logger,
@@ -63,75 +66,23 @@ func NewDenodoConnector(prefixForUpdate, overwriteMode string, logger *logger.Bu
 	return connector, nil
 }
 
-func (d *DenodoConnector) GetAllDenodoRootAssets() ([]qdc.Data, error) {
-	var rootAssets []qdc.Data
-
-	var lastAssetID string
-	for {
-		assetResponse, err := d.QDCExternalAPIClient.GetAssetByType("schema", lastAssetID)
-		if err != nil {
-			d.Logger.Error("Failed to GetAssetByType. lastAssetID: %s", lastAssetID)
-			return nil, err
-		}
-		for _, assetData := range assetResponse.Data {
-			switch assetData.ServiceName {
-			case "denodo":
-				rootAssets = append(rootAssets, assetData)
-			default:
-				continue
-			}
-		}
-		switch assetResponse.LastID {
-		case "":
-			return rootAssets, nil
-		default:
-			d.Logger.Debug("GetAllDenodoRootAssets will continue. lastAssetID: %s", lastAssetID)
-			lastAssetID = assetResponse.LastID
-		}
-	}
-}
-
-func (d *DenodoConnector) GetAllChildAssetsByID(parentAssets []qdc.Data) ([]qdc.Data, error) {
-	var childAssets []qdc.Data
-
-	for _, parentAsset := range parentAssets {
-		childAssetIdChunks := utils.SplitArrayToChunks(parentAsset.ChildAssetIds, 100) // MEMO: 100 is the max size of the each array.
-		for _, childAssetIdChunk := range childAssetIdChunks {
-			assets, err := d.QDCExternalAPIClient.GetAssetByIDs(childAssetIdChunk)
-			if err != nil {
-				return nil, err
-			}
-			childAssets = append(childAssets, assets.Data...)
-		}
-	}
-	if os.Getenv("LOG_LEVEL") == "DEBUG" {
-		d.Logger.Debug("The number of child assets is %v", len(childAssets))
-		var childAssetIds []string
-		for _, childAsset := range childAssets {
-			childAssetIds = append(childAssetIds, childAsset.ID)
-		}
-		d.Logger.Debug("The child asset ids are %v", childAssetIds)
-	}
-	return childAssets, nil
-}
-
 func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 	d.Logger.Info("Get Denodo assets from QDIC")
-	rootAssets, err := d.GetAllDenodoRootAssets()
+	rootAssets, err := d.QDCExternalAPIClient.GetAllRootAssets("denodo", d.AssetCreatedBy)
 	if err != nil {
 		d.Logger.Error("Failed to GetAllDenodoRootAssets: %s", err.Error())
 		return err
 	}
 	rootAssetsMap := convertQdcAssetListToMap(rootAssets)
 
-	tableAssets, err := d.GetAllChildAssetsByID(rootAssets)
+	tableAssets, err := d.QDCExternalAPIClient.GetAllChildAssetsByID(rootAssets)
 	if err != nil {
 		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
 		return err
 	}
 	tableAssetsMap := convertQdcAssetListToMap(tableAssets)
 
-	columnAssets, err := d.GetAllChildAssetsByID(tableAssets)
+	columnAssets, err := d.QDCExternalAPIClient.GetAllChildAssetsByID(tableAssets)
 	if err != nil {
 		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
 		return err

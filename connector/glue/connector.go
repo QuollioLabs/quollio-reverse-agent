@@ -18,6 +18,7 @@ import (
 type GlueConnector struct {
 	QDCExternalAPIClient qdc.QDCExternalAPI
 	GlueRepo             glue.GlueClient
+	AssetCreatedBy       string
 	AthenaAccountID      string
 	OverwriteMode        string
 	PrefixForUpdate      string
@@ -36,10 +37,12 @@ func NewGlueConnector(prefixForUpdate, overwriteMode string, logger *logger.Buil
 	qdcBaseURL := os.Getenv("QDC_BASE_URL")
 	qdcClientID := os.Getenv("QDC_CLIENT_ID")
 	qdcClientSecret := os.Getenv("QDC_CLIENT_SECRET")
-	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret)
+	assetCreatedBy := os.Getenv("QDC_ASSET_CREATED_BY")
+	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret, logger)
 	connector := GlueConnector{
 		QDCExternalAPIClient: externalAPI,
 		GlueRepo:             glueClient,
+		AssetCreatedBy:       assetCreatedBy,
 		AthenaAccountID:      athenaAccountID,
 		OverwriteMode:        overwriteMode,
 		PrefixForUpdate:      prefixForUpdate,
@@ -47,73 +50,6 @@ func NewGlueConnector(prefixForUpdate, overwriteMode string, logger *logger.Buil
 	}
 
 	return connector, nil
-}
-
-func (g *GlueConnector) GetAllAthenaRootAssets() ([]qdc.Data, error) {
-	var rootAssets []qdc.Data
-
-	var lastAssetID string
-	for {
-		assetResponse, err := g.QDCExternalAPIClient.GetAssetByType("schema", lastAssetID)
-		if err != nil {
-			g.Logger.Error("Failed to GetAssetByType. lastAssetID: %s", lastAssetID)
-			return nil, err
-		}
-		for _, assetData := range assetResponse.Data {
-			switch assetData.ServiceName {
-			case "athena":
-				rootAssets = append(rootAssets, assetData)
-			default:
-				continue
-			}
-		}
-		switch assetResponse.LastID {
-		case "":
-			return rootAssets, nil
-		default:
-			g.Logger.Debug("GetAllAthenaRootAssets will continue. lastAssetID: %s", lastAssetID)
-			lastAssetID = assetResponse.LastID
-		}
-	}
-}
-
-func (g *GlueConnector) GetAllChildAssetsByID(parentAssets []qdc.Data) ([]qdc.Data, error) {
-	var childAssets []qdc.Data
-
-	for _, parentAsset := range parentAssets {
-		childAssetIdChunks := utils.SplitArrayToChunks(parentAsset.ChildAssetIds, 100) // MEMO: 100 is the max size of the each array.
-		for _, childAssetIdChunk := range childAssetIdChunks {
-			assets, err := g.QDCExternalAPIClient.GetAssetByIDs(childAssetIdChunk)
-			if err != nil {
-				return nil, err
-			}
-			childAssets = append(childAssets, assets.Data...)
-		}
-	}
-	if os.Getenv("LOG_LEVEL") == "DEBUG" {
-		g.Logger.Debug("The number of child assets is %v", len(childAssets))
-		var childAssetIds []string
-		for _, childAsset := range childAssets {
-			childAssetIds = append(childAssetIds, childAsset.ID)
-		}
-		g.Logger.Debug("The child asset ids are %v", childAssetIds)
-	}
-	return childAssets, nil
-}
-
-func (g *GlueConnector) GetChildAssetsByParentAsset(assets qdc.Data) ([]qdc.Data, error) {
-	var childAssets []qdc.Data
-
-	childAssetIdChunks := utils.SplitArrayToChunks(assets.ChildAssetIds, 100) // MEMO: 100 is the max size of the each array.
-	for _, childAssetIdChunk := range childAssetIdChunks {
-		assets, err := g.QDCExternalAPIClient.GetAssetByIDs(childAssetIdChunk)
-		if err != nil {
-			return nil, err
-		}
-		childAssets = append(childAssets, assets.Data...)
-	}
-	g.Logger.Debug("The number of child asset chunks is %v", len(childAssets))
-	return childAssets, nil
 }
 
 func (g *GlueConnector) ReflectDatabaseDescToAthena(dbAssets []qdc.Data) error {
@@ -189,7 +125,7 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 			updateTableInput.TableInput.Description = &descWithPrefix
 			tableShouldBeUpdated = true
 		}
-		columnAssets, err := g.GetChildAssetsByParentAsset(tableAsset)
+		columnAssets, err := g.QDCExternalAPIClient.GetChildAssetsByParentAsset(tableAsset)
 		if err != nil {
 			return err
 		}
@@ -212,14 +148,14 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 
 func (g *GlueConnector) ReflectMetadataToDataCatalog() error {
 	g.Logger.Info("List Athena database assets")
-	rootAssets, err := g.GetAllAthenaRootAssets()
+	rootAssets, err := g.QDCExternalAPIClient.GetAllRootAssets("athena", g.AssetCreatedBy)
 	if err != nil {
 		g.Logger.Error("Failed to GetAllAthenaRootAssets: %s", err.Error())
 		return err
 	}
 
 	g.Logger.Info("List Athena schema assets")
-	schemaAssets, err := g.GetAllChildAssetsByID(rootAssets)
+	schemaAssets, err := g.QDCExternalAPIClient.GetAllChildAssetsByID(rootAssets)
 	if err != nil {
 		g.Logger.Error("Failed to GetAllChildAssetsByID for schemaAssets: %s", err.Error())
 		return err
@@ -232,7 +168,7 @@ func (g *GlueConnector) ReflectMetadataToDataCatalog() error {
 	}
 
 	g.Logger.Info("List Athena table assets")
-	tableAssets, err := g.GetAllChildAssetsByID(schemaAssets)
+	tableAssets, err := g.QDCExternalAPIClient.GetAllChildAssetsByID(schemaAssets)
 	if err != nil {
 		g.Logger.Error("Failed to GetAllChildAssetsByID: %s", err.Error())
 		return err
