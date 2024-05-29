@@ -54,13 +54,14 @@ DenodoDataCatalog.Column.Description: QDIC.Column.LogicalName+QDIC.Column.Descri
 
 
 ## 実行方法
-ローカル環境で実行する際の説明を記載します。
+下記を行うことで、ローカル環境で実行できます。
 
-1. リポジトリのルートレベルに`.env`ファイルを作成します。
-1. 必要な環境変数をファイルに定義していきます。
-1. 設定完了後、`make run`コマンドを実行します。
+1. リポジトリのルートレベルに`.env`ファイルを作成する。
+1. 必要な環境変数をファイルに定義する。
+1. 設定完了後、`make run`コマンドを実行する。
 
-必要な環境変数は次のとおりです。クラウドサービスごとに実行するため、システム共通の変数と、いずれかのクラウドサービスの変数を設定する必要があります。
+必要な環境変数は次のとおりです。  
+クラウドサービスごとに実行するため、システム共通の変数と、いずれかのクラウドサービスの変数を設定する必要があります。
 ### システム共通
 ```
 SYSTEM_NAME=<(Required) システム名。次のうちから一つ選択する。`bigquery`, `athena` or `denodo`>  
@@ -173,13 +174,14 @@ Data updates are performed under either of the following two conditions:
 The selection of conditions and the prefix for items can be specified by parameters at runtime.
 
 ## Execution
-The instructions for running locally are described below.
+You can execute it in a local environment by doing the following.
 
 - Create a .env file at the root level of the repository.
 - Define the necessary environment variables in the file.
 - After completing the setup, run the `make run` command.
 
-The required environment variables are as follows. To execute for each cloud service, you need to set common system variables as well as variables for one of the cloud services.
+The required environment variables are as follows.  
+To execute for each cloud service, you need to set common system variables as well as variables for one of the cloud services.
 
 # System common
 ```
