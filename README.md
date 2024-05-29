@@ -27,11 +27,11 @@
 # システム共通
 SYSTEM_NAME=<(Required) システム名。次のうちから一つ選択する。`bigquery`, `athena` or `denodo`>
 COMPANY_ID=<(Required) QDICログインに使用するテナントID>
-OVERWRITE_MODE=<(Required) OVERWRITE_IF_EMPTY or OVERWRITE_ALL。説明は下部に記載しています。デフォルト値は`OVERWRITE_IF_EMPTY`となります。>
 QDC_BASE_URL=<(Required) QDIC EXternalAPIのBase URL>
 QDC_CLIENT_ID=<(Required) QDIC EXternalAPIのクライアントID>
 QDC_CLIENT_SECRET=<(Required) QDIC EXternalAPIのクライアントシークレット>
 QDC_ASSET_CREATED_BY=<(Optional) QDICにアセットを登録したユーザー名。入力することで、更新するアセットをフィルタすることができます。>
+OVERWRITE_MODE=<(Optional) OVERWRITE_IF_EMPTY or OVERWRITE_ALL。説明は下部に記載しています。デフォルト値は`OVERWRITE_IF_EMPTY`となります。>
 LOG_LEVEL=<(Optional)ログレベル。デフォルトは`INFO`で、`DEBUG`に切り替えることで開発用のログを確認できます。>
 
 # BigQuery
@@ -94,11 +94,11 @@ The required environment variables are as follows:
 # System common
 SYSTEM_NAME=<(Required) System name. Choose one from the following: `bigquery`, `athena`, or `denodo`>
 COMPANY_ID=<(Required) Tenant ID used for QDIC login>
-OVERWRITE_MODE=<(Required) OVERWRITE_IF_EMPTY or OVERWRITE_ALL. Descriptions are provided below. The default value is `OVERWRITE_IF_EMPTY`>
 QDC_BASE_URL=<(Required) Base URL for QDIC External API>
 QDC_CLIENT_ID=<(Required) Client ID for QDIC External API>
 QDC_CLIENT_SECRET=<(Required) Client Secret for QDIC External API>
 QDC_ASSET_CREATED_BY=<(Optional) Username of the user who registered the asset in QDIC. By entering this, you can filter the assets to be updated.>
+OVERWRITE_MODE=<(Optional) OVERWRITE_IF_EMPTY or OVERWRITE_ALL. Descriptions are provided below. The default value is `OVERWRITE_IF_EMPTY`>
 LOG_LEVEL=<(Optional)Log level。`INFO` is set as default value. You can see debug log by switching it to `DEBUG`>
 
 # BigQuery
