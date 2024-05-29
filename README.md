@@ -57,31 +57,31 @@ DenodoDataCatalog.Column.Description: `QDIC.Column.LogicalName+QDIC.Column.Descr
 
 必要な環境変数は次のとおりです。クラウドサービスごとに実行するため、システム共通の変数と、いずれかのクラウドサービスの変数を設定する必要があります。
 ### システム共通
-SYSTEM_NAME=<(Required) システム名。次のうちから一つ選択する。`bigquery`, `athena` or `denodo`>
-COMPANY_ID=<(Required) QDICログインに使用するテナントID>
-QDC_BASE_URL=<(Required) QDIC EXternalAPIのBase URL>
-QDC_CLIENT_ID=<(Required) QDIC EXternalAPIのクライアントID>
-QDC_CLIENT_SECRET=<(Required) QDIC EXternalAPIのクライアントシークレット>
-QDC_ASSET_CREATED_BY=<(Optional) QDICにアセットを登録したユーザー名。入力することで、更新するアセットをフィルタすることができます。>
-OVERWRITE_MODE=<(Optional) OVERWRITE_IF_EMPTY or OVERWRITE_ALL。説明は下部に記載しています。デフォルト値は`OVERWRITE_IF_EMPTY`となります。>
-PREFIX_FOR_UPDATE=<(Optional) 更新時に値につけるPrefix値。`OVERWRITE_MODE`の値に`OVERWRITE_IF_EMPTY`を設定している場合、このPrefixが値についた項目は更新対象となります。デフォルト値は【QDIC】です。>
-LOG_LEVEL=<(Optional)ログレベル。デフォルトは`INFO`で、`DEBUG`に切り替えることで開発用のログを確認できます。>
+SYSTEM_NAME=<(Required) システム名。次のうちから一つ選択する。`bigquery`, `athena` or `denodo`>  
+COMPANY_ID=<(Required) QDICログインに使用するテナントID>  
+QDC_BASE_URL=<(Required) QDIC EXternalAPIのBase URL>  
+QDC_CLIENT_ID=<(Required) QDIC EXternalAPIのクライアントID>  
+QDC_CLIENT_SECRET=<(Required) QDIC EXternalAPIのクライアントシークレット>  
+QDC_ASSET_CREATED_BY=<(Optional) QDICにアセットを登録したユーザー名。入力することで、更新するアセットをフィルタすることができます。>  
+OVERWRITE_MODE=<(Optional) OVERWRITE_IF_EMPTY or OVERWRITE_ALL。説明は下部に記載しています。デフォルト値は`OVERWRITE_IF_EMPTY`となります。>  
+PREFIX_FOR_UPDATE=<(Optional) 更新時に値につけるPrefix値。`OVERWRITE_MODE`の値に`OVERWRITE_IF_EMPTY`を設定している場合、このPrefixが値についた項目は更新対象となります。デフォルト値は【QDIC】です。>  
+LOG_LEVEL=<(Optional)ログレベル。デフォルトは`INFO`で、`DEBUG`に切り替えることで開発用のログを確認できます。>  
 
 ### BigQuery
 GOOGLE_CLOUD_SERVICE_ACCOUNT_CREDENTIALS=<(Required) サービスアカウントのJSON値>
 
 ### Athena
-AWS_IAM_ROLE_FOR_GLUE_TABLE=<(Required) IAMロール名>
-ATHENA_ACCOUNT_ID=<(Required) Athenaの存在するアカウントID>
-PROFILE_NAME=<(Optional) ローカル実行する場合に必要となるプロファイル名>
+AWS_IAM_ROLE_FOR_GLUE_TABLE=<(Required) IAMロール名>  
+ATHENA_ACCOUNT_ID=<(Required) Athenaの存在するアカウントID>  
+PROFILE_NAME=<(Optional) ローカル実行する場合に必要となるプロファイル名>  
 
 ### Denodo
-DENODO_HOST_NAME=<(Required) VDPホスト名>
-DENODO_CLIENT_ID=<(Required) VDPユーザー名>
-DENODO_CLIENT_SECRET=<(Required) VDPユーザーパスワード>
-DENODO_DEFUALT_DB_NAME=<(Required) VDPデフォルトデータベース>
-DENODO_ODBC_PORT=<(Required) VDP ODBCポート>
-DENODO_REST_API_PORT=<(Required) VDP REST APIポート>
+DENODO_HOST_NAME=<(Required) VDPホスト名>  
+DENODO_CLIENT_ID=<(Required) VDPユーザー名>  
+DENODO_CLIENT_SECRET=<(Required) VDPユーザーパスワード>  
+DENODO_DEFUALT_DB_NAME=<(Required) VDPデフォルトデータベース>  
+DENODO_ODBC_PORT=<(Required) VDP ODBCポート>  
+DENODO_REST_API_PORT=<(Required) VDP REST APIポート>  
 
 ### 補足
 OVERWRITE_MODEの値は次の条件に従って設定してください。
@@ -124,14 +124,14 @@ The reverse agent updates the values of resource items existing in each cloud se
 Currently, the following items are targeted. They are listed as <ServiceName><ResourceName><ItemName>.
 
 ### BigQuery
-BigQuery.Dataset.Description: QDIC.Database.Description
-Dataplex.Table.Overview: QDIC.Table.Description
-BigQuery.Column.Description: QDIC.Column.Description
+BigQuery.Dataset.Description: QDIC.Database.Description  
+Dataplex.Table.Overview: QDIC.Table.Description  
+BigQuery.Column.Description: QDIC.Column.Description  
 
 ### Athena
-Athena.Database.Description: QDIC.Database.Description
-Athena.Table.Overview: QDIC.Table.Description
-Athena.Column.Description: QDIC.Column.Description
+Athena.Database.Description: QDIC.Database.Description  
+Athena.Table.Overview: QDIC.Table.Description  
+Athena.Column.Description: QDIC.Column.Description  
 
 ### Denodo
 *Items are updated in the format `【ItemName】<QDIC LogicalName>\n【Description】<QDIC Description>`  
@@ -163,15 +163,15 @@ The instructions for running locally are described below.
 The required environment variables are as follows. To execute for each cloud service, you need to set common system variables as well as variables for one of the cloud services.
 
 # System common
-SYSTEM_NAME=<(Required) System name. Choose one from the following: `bigquery`, `athena`, or `denodo`>
-COMPANY_ID=<(Required) Tenant ID used for QDIC login>
-QDC_BASE_URL=<(Required) Base URL for QDIC External API>
-QDC_CLIENT_ID=<(Required) Client ID for QDIC External API>
-QDC_CLIENT_SECRET=<(Required) Client Secret for QDIC External API>
-QDC_ASSET_CREATED_BY=<(Optional) Username of the user who registered the asset in QDIC. By entering this, you can filter the assets to be updated.>
-OVERWRITE_MODE=<(Optional) OVERWRITE_IF_EMPTY or OVERWRITE_ALL. Descriptions are provided below. The default value is `OVERWRITE_IF_EMPTY`>
+SYSTEM_NAME=<(Required) System name. Choose one from the following: `bigquery`, `athena`, or `denodo`>  
+COMPANY_ID=<(Required) Tenant ID used for QDIC login>  
+QDC_BASE_URL=<(Required) Base URL for QDIC External API>  
+QDC_CLIENT_ID=<(Required) Client ID for QDIC External API>  
+QDC_CLIENT_SECRET=<(Required) Client Secret for QDIC External API>  
+QDC_ASSET_CREATED_BY=<(Optional) Username of the user who registered the asset in QDIC. By entering this, you can filter the assets to be updated.>  
+OVERWRITE_MODE=<(Optional) OVERWRITE_IF_EMPTY or OVERWRITE_ALL. Descriptions are provided below. The default value is `OVERWRITE_IF_EMPTY`>  
 PREFIX_FOR_UPDATE=<(Optional) The prefix value to be added to the value during the update. If the value of OVERWRITE_MODE is set to OVERWRITE_IF_EMPTY, items with this prefix value will be targeted for updates. The default value is 【QDIC】.>  
-LOG_LEVEL=<(Optional)Log level。`INFO` is set as default value. You can see debug log by switching it to `DEBUG`>
+LOG_LEVEL=<(Optional)Log level。`INFO` is set as default value. You can see debug log by switching it to `DEBUG`>  
 
 ### BigQuery
 GOOGLE_CLOUD_SERVICE_ACCOUNT_CREDENTIALS=<(Required) JSON value of the service account>  
@@ -193,6 +193,7 @@ DENODO_REST_API_PORT=<(Required) VDP REST API port>
 Please set the value of OVERWRITE_MODE according to the following conditions:  
 - OVERWRITE_IF_EMPTY: Executes with condition 1 of the update conditions.  
 - OVERWRITE_ALL: Executes with condition 2 of the update conditions.  
+
 The value of PREFIX_FOR_UPDATE is used when executed with condition 1.  
 If this value is set, it will be updated even if the value is not null or an empty string.  
 The default value is 【QDIC】.  
