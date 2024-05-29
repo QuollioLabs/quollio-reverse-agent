@@ -977,3 +977,30 @@ func TestShouldUpdateDenodoVdpColumn(t *testing.T) {
 		}
 	}
 }
+
+func TestGenUpdateString(t *testing.T) {
+	testCases := []struct {
+		Input struct {
+			LogicalName string
+			Description string
+		}
+		Expect string
+	}{
+		{
+			Input: struct {
+				LogicalName string
+				Description string
+			}{
+				LogicalName: "論理名",
+				Description: "テスト",
+			},
+			Expect: "【項目名称】論理名\n【説明】テスト",
+		},
+	}
+	for _, testCase := range testCases {
+		res := genUpdateString(testCase.Input.LogicalName, testCase.Input.Description)
+		if res != testCase.Expect {
+			t.Errorf("Test failed want %v but got %s", testCase.Expect, res)
+		}
+	}
+}
