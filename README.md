@@ -2,7 +2,7 @@
 
 ## 説明
 
-このライブラリは、Quollio Data Intelligence Cloud (QDIC)上のメタデータを取得し、各クラウドサービスのデータカタログに反映させます。  
+このシステムは、Quollio Data Intelligence Cloud (QDIC)上のメタデータを取得し、各クラウドサービスのデータカタログに反映させます。  
 現在対応しているデータカタログサービスは以下となっております。
 - Google BigQuery(Dataplex)
 - Amazon Athena(Glue DataCatalog)
@@ -118,7 +118,7 @@ $ make test
 
 
 ## Description
-This library retrieves metadata from the Quollio Data Intelligence Cloud (QDIC) and reflects it in the data catalog of each cloud service.
+This system retrieves metadata from the Quollio Data Intelligence Cloud (QDIC) and reflects it in the data catalog of each cloud service.
 Currently supported data catalog services are:
 - Google BigQuery (Dataplex)
 - Amazon Athena (Glue DataCatalog)
