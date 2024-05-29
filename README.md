@@ -28,7 +28,7 @@ BigQuery.Column.Description: QDIC.Column.Description
 ```
 Athena.Database.Description: QDIC.Database.Description  
 Athena.Table.Overview: QDIC.Table.Description  
-Athena.Column.Description: QDIC.Column.Description  
+Athena.Column.Comment: QDIC.Column.Description  
 ```
 
 ### Denodo
@@ -148,7 +148,7 @@ BigQuery.Column.Description: QDIC.Column.Description
 ```
 Athena.Database.Description: QDIC.Database.Description  
 Athena.Table.Overview: QDIC.Table.Description  
-Athena.Column.Description: QDIC.Column.Description  
+Athena.Column.Comment: QDIC.Column.Description  
 ```
 
 ### Denodo
