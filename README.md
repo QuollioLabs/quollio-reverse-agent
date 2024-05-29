@@ -33,13 +33,13 @@ Athena.Column.Description: QDIC.Column.Description
 
 ### Denodo
 ```
-*`【項目名称】<QDICの論理名>\n【説明】<QDICの説明>`という形式で更新します。  
-DenodoVDP.Database.Description: `QDIC.Database.LogicalName+QDIC.Database.Description`  
-DenodoVDP.Table.Overview: `QDIC.Table.LogicalName+QDIC.Table.Description`  
-DenodoVDP.Column.Description: `QDIC.Column.LogicalName+QDIC.Column.Description`  
-DenodoDataCatalog.Database.Description: `QDIC.Database.LogicalName+QDIC.Database.Description`  
-DenodoDataCatalog.Table.Overview: `QDIC.Table.LogicalName+QDIC.Table.Description`  
-DenodoDataCatalog.Column.Description: `QDIC.Column.LogicalName+QDIC.Column.Description`  
+*【項目名称】<QDICの論理名>\n【説明】<QDICの説明>という形式で更新します。
+DenodoVDP.Database.Description: QDIC.Database.LogicalName+QDIC.Database.Description
+DenodoVDP.Table.Overview: QDIC.Table.LogicalName+QDIC.Table.Description
+DenodoVDP.Column.Description: QDIC.Column.LogicalName+QDIC.Column.Description
+DenodoDataCatalog.Database.Description: QDIC.Database.LogicalName+QDIC.Database.Description
+DenodoDataCatalog.Table.Overview: QDIC.Table.LogicalName+QDIC.Table.Description
+DenodoDataCatalog.Column.Description: QDIC.Column.LogicalName+QDIC.Column.Description
 ```
 
 ### 更新条件
@@ -152,13 +152,13 @@ Athena.Column.Description: QDIC.Column.Description
 
 ### Denodo
 ```
-*Items are updated in the format `【ItemName】<QDIC LogicalName>\n【Description】<QDIC Description>`  
-DenodoVDP.Database.Description: `QDIC.Database.LogicalName+QDIC.Database.Description`  
-DenodoVDP.Table.Overview: `QDIC.Table.LogicalName+QDIC.Table.Description`  
-DenodoVDP.Column.Description: `QDIC.Column.LogicalName+QDIC.Column.Description`  
-DenodoDataCatalog.Database.Description:` QDIC.Database.LogicalName+QDIC.Database.Description`  
-DenodoDataCatalog.Table.Overview: `QDIC.Table.LogicalName+QDIC.Table.Description`  
-DenodoDataCatalog.Column.Description: `QDIC.Column.LogicalName+QDIC.Column.Description`  
+*Items are updated in the format 【ItemName】<QDIC LogicalName>\n【Description】<QDIC Description>
+DenodoVDP.Database.Description: QDIC.Database.LogicalName+QDIC.Database.Description 
+DenodoVDP.Table.Overview: QDIC.Table.LogicalName+QDIC.Table.Description
+DenodoVDP.Column.Description: QDIC.Column.LogicalName+QDIC.Column.Description
+DenodoDataCatalog.Database.Description: QDIC.Database.LogicalName+QDIC.Database.Description
+DenodoDataCatalog.Table.Overview: QDIC.Table.LogicalName+QDIC.Table.Description
+DenodoDataCatalog.Column.Description: QDIC.Column.LogicalName+QDIC.Column.Description
 ```
 
 ### Update Conditions
