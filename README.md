@@ -27,7 +27,7 @@ BigQuery.Column.Description: QDIC.Column.Description
 ### Athena
 ```
 Athena.Database.Description: QDIC.Database.Description  
-Athena.Table.Overview: QDIC.Table.Description  
+Athena.Table.Description: QDIC.Table.Description
 Athena.Column.Comment: QDIC.Column.Description  
 ```
 
@@ -35,10 +35,10 @@ Athena.Column.Comment: QDIC.Column.Description
 ```
 *【項目名称】<QDICの論理名>\n【説明】<QDICの説明>という形式で更新します。
 DenodoVDP.Database.Description: QDIC.Database.LogicalName+QDIC.Database.Description
-DenodoVDP.Table.Overview: QDIC.Table.LogicalName+QDIC.Table.Description
+DenodoVDP.Table.Description: QDIC.Table.LogicalName+QDIC.Table.Description
 DenodoVDP.Column.Description: QDIC.Column.LogicalName+QDIC.Column.Description
 DenodoDataCatalog.Database.Description: QDIC.Database.LogicalName+QDIC.Database.Description
-DenodoDataCatalog.Table.Overview: QDIC.Table.LogicalName+QDIC.Table.Description
+DenodoDataCatalog.Table.Description: QDIC.Table.LogicalName+QDIC.Table.Description
 DenodoDataCatalog.Column.Description: QDIC.Column.LogicalName+QDIC.Column.Description
 ```
 
@@ -147,7 +147,7 @@ BigQuery.Column.Description: QDIC.Column.Description
 ### Athena
 ```
 Athena.Database.Description: QDIC.Database.Description  
-Athena.Table.Overview: QDIC.Table.Description  
+Athena.Table.Description: QDIC.Table.Description
 Athena.Column.Comment: QDIC.Column.Description  
 ```
 
@@ -155,10 +155,10 @@ Athena.Column.Comment: QDIC.Column.Description
 ```
 *Items are updated in the format 【ItemName】<QDIC LogicalName>\n【Description】<QDIC Description>
 DenodoVDP.Database.Description: QDIC.Database.LogicalName+QDIC.Database.Description 
-DenodoVDP.Table.Overview: QDIC.Table.LogicalName+QDIC.Table.Description
+DenodoVDP.Table.Description: QDIC.Table.LogicalName+QDIC.Table.Description
 DenodoVDP.Column.Description: QDIC.Column.LogicalName+QDIC.Column.Description
 DenodoDataCatalog.Database.Description: QDIC.Database.LogicalName+QDIC.Database.Description
-DenodoDataCatalog.Table.Overview: QDIC.Table.LogicalName+QDIC.Table.Description
+DenodoDataCatalog.Table.Description: QDIC.Table.LogicalName+QDIC.Table.Description
 DenodoDataCatalog.Column.Description: QDIC.Column.LogicalName+QDIC.Column.Description
 ```
 
