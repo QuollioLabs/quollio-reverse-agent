@@ -297,8 +297,5 @@ func GetSpecifiedAssetFromPath(asset Data, pathLayer string) Path {
 }
 
 func IsAssetContainsValueAsDescription(asset Data) bool {
-	if asset.Description == "" {
-		return false
-	}
-	return true
+	return asset.Description != ""
 }
