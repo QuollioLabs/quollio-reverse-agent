@@ -69,3 +69,49 @@ func TestGetSpecifiedAssetFromPath(t *testing.T) {
 		}
 	}
 }
+
+func TestIsAssetContainsValueAsDescription(t *testing.T) {
+	testCases := []struct {
+		Input struct {
+			Asset qdc.Data
+		}
+		Expect bool
+	}{
+		{
+			Input: struct {
+				Asset qdc.Data
+			}{
+				Asset: qdc.Data{
+					ID:           "clmn-1234",
+					ObjectType:   "column",
+					ServiceName:  "bigquery",
+					PhysicalName: "test-column-name1",
+					Description:  "test-description",
+					DataType:     "string",
+				},
+			},
+			Expect: true,
+		},
+		{
+			Input: struct {
+				Asset qdc.Data
+			}{
+				Asset: qdc.Data{
+					ID:           "clmn-1234",
+					ObjectType:   "column",
+					ServiceName:  "bigquery",
+					PhysicalName: "test-column-name1",
+					Description:  "",
+					DataType:     "string",
+				},
+			},
+			Expect: false,
+		},
+	}
+	for _, testCase := range testCases {
+		res := qdc.IsAssetContainsValueAsDescription(testCase.Input.Asset)
+		if res != testCase.Expect {
+			t.Errorf("want %v but got %v.", testCase.Expect, res)
+		}
+	}
+}

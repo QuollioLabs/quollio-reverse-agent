@@ -294,3 +294,10 @@ func GetSpecifiedAssetFromPath(asset Data, pathLayer string) Path {
 	}
 	return Path{}
 }
+
+func IsAssetContainsValueAsDescription(asset Data) bool {
+	if asset.Description == "" {
+		return false
+	}
+	return true
+}

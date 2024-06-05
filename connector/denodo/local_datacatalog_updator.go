@@ -46,6 +46,10 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 			d.Logger.Warning("Skip to update table because API doesn't allow japanese letter as an input. Database: %s, Table: %s", qdcDatabaseAsset.Name, tableAsset.PhysicalName)
 			continue
 		}
+		if !qdc.IsAssetContainsValueAsDescription(tableAsset) {
+			d.Logger.Debug("Skip GetViewDetail and Update View because the description of qdc table asset is empty. Database: %s, Table: %s ", qdcDatabaseAsset.Name, tableAsset.PhysicalName)
+			continue
+		}
 		localViewDetail, err := d.DenodoRepo.GetViewDetails(qdcDatabaseAsset.Name, tableAsset.PhysicalName)
 		if err != nil {
 			return fmt.Errorf("Failed to GetViewDetails. err: %s", err.Error())
@@ -83,6 +87,10 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 		qdcTableAsset := qdc.GetSpecifiedAssetFromPath(columnAsset, "table")
 		if utils.IsStringContainJapanese(qdcDatabaseAsset.Name) || utils.IsStringContainJapanese(qdcTableAsset.Name) {
 			d.Logger.Warning("Skip to update table because API doesn't allow japanese letter as an input. Database: %s, Table: %s", qdcDatabaseAsset.Name, qdcTableAsset.Name)
+			continue
+		}
+		if !qdc.IsAssetContainsValueAsDescription(columnAsset) {
+			d.Logger.Debug("Skip GetViewColumns and Update View Column because the description of qdc column asset is empty. Database: %s, Table: %s, Column:  %s", qdcDatabaseAsset.Name, qdcTableAsset.Name, columnAsset.PhysicalName)
 			continue
 		}
 		localViewColumns, err := d.DenodoRepo.GetViewColumns(qdcDatabaseAsset.Name, qdcTableAsset.Name)
