@@ -14,6 +14,7 @@ fmt:
 
 .PHONY: build
 build:
+		GOOS="linux" GOARCH="amd64" CGO_ENABLED="0" go build -trimpath -o ./main ./main.go
 		docker build --platform linux/amd64 --no-cache -f ./Dockerfile -t quollio-reverse-agent-universal ./.
 
 .PHONY: run

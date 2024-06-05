@@ -41,7 +41,7 @@ func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.
 
 func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[string]qdc.Data) error {
 	for _, tableAsset := range tableAssets {
-		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(tableAsset, "schema3")
+		qdcDatabaseAsset := qdc.GetSpecifiedAssetFromPath(tableAsset, "schema3")
 		if utils.IsStringContainJapanese(qdcDatabaseAsset.Name) || utils.IsStringContainJapanese(tableAsset.PhysicalName) {
 			d.Logger.Warning("Skip to update table because API doesn't allow japanese letter as an input. Database: %s, Table: %s", qdcDatabaseAsset.Name, tableAsset.PhysicalName)
 			continue
@@ -79,8 +79,8 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 
 func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[string]qdc.Data) error {
 	for _, columnAsset := range columnAssets {
-		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(columnAsset, "schema3")
-		qdcTableAsset := utils.GetSpecifiedAssetFromPath(columnAsset, "table")
+		qdcDatabaseAsset := qdc.GetSpecifiedAssetFromPath(columnAsset, "schema3")
+		qdcTableAsset := qdc.GetSpecifiedAssetFromPath(columnAsset, "table")
 		if utils.IsStringContainJapanese(qdcDatabaseAsset.Name) || utils.IsStringContainJapanese(qdcTableAsset.Name) {
 			d.Logger.Warning("Skip to update table because API doesn't allow japanese letter as an input. Database: %s, Table: %s", qdcDatabaseAsset.Name, qdcTableAsset.Name)
 			continue
