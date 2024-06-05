@@ -107,6 +107,20 @@ func TestIsAssetContainsValueAsDescription(t *testing.T) {
 			},
 			Expect: false,
 		},
+		{
+			Input: struct {
+				Asset qdc.Data
+			}{
+				Asset: qdc.Data{
+					ID:           "clmn-1234",
+					ObjectType:   "column",
+					ServiceName:  "bigquery",
+					PhysicalName: "test-column-name1",
+					DataType:     "string",
+				},
+			},
+			Expect: false,
+		},
 	}
 	for _, testCase := range testCases {
 		res := qdc.IsAssetContainsValueAsDescription(testCase.Input.Asset)
