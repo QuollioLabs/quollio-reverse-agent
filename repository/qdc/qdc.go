@@ -257,6 +257,7 @@ func (q *QDCExternalAPI) GetAllChildAssetsByID(parentAssets []Data) ([]Data, err
 				return nil, err
 			}
 			childAssets = append(childAssets, assets.Data...)
+			q.Logger.Debug("Fetching ChildAssets by parent id %s", parentAsset.ID)
 		}
 	}
 	if os.Getenv("LOG_LEVEL") == "DEBUG" {
