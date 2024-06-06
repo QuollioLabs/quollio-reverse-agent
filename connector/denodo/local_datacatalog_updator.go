@@ -41,9 +41,13 @@ func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.
 
 func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[string]qdc.Data) error {
 	for _, tableAsset := range tableAssets {
-		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(tableAsset, "schema3")
+		qdcDatabaseAsset := qdc.GetSpecifiedAssetFromPath(tableAsset, "schema3")
 		if utils.IsStringContainJapanese(qdcDatabaseAsset.Name) || utils.IsStringContainJapanese(tableAsset.PhysicalName) {
 			d.Logger.Warning("Skip to update table because API doesn't allow japanese letter as an input. Database: %s, Table: %s", qdcDatabaseAsset.Name, tableAsset.PhysicalName)
+			continue
+		}
+		if !qdc.IsAssetContainsValueAsDescription(tableAsset) {
+			d.Logger.Debug("Skip GetViewDetail and Update View because the description of qdc table asset is empty. Database: %s, Table: %s ", qdcDatabaseAsset.Name, tableAsset.PhysicalName)
 			continue
 		}
 		localViewDetail, err := d.DenodoRepo.GetViewDetails(qdcDatabaseAsset.Name, tableAsset.PhysicalName)
@@ -79,10 +83,14 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 
 func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[string]qdc.Data) error {
 	for _, columnAsset := range columnAssets {
-		qdcDatabaseAsset := utils.GetSpecifiedAssetFromPath(columnAsset, "schema3")
-		qdcTableAsset := utils.GetSpecifiedAssetFromPath(columnAsset, "table")
+		qdcDatabaseAsset := qdc.GetSpecifiedAssetFromPath(columnAsset, "schema3")
+		qdcTableAsset := qdc.GetSpecifiedAssetFromPath(columnAsset, "table")
 		if utils.IsStringContainJapanese(qdcDatabaseAsset.Name) || utils.IsStringContainJapanese(qdcTableAsset.Name) {
 			d.Logger.Warning("Skip to update table because API doesn't allow japanese letter as an input. Database: %s, Table: %s", qdcDatabaseAsset.Name, qdcTableAsset.Name)
+			continue
+		}
+		if !qdc.IsAssetContainsValueAsDescription(columnAsset) {
+			d.Logger.Debug("Skip GetViewColumns and Update View Column because the description of qdc column asset is empty. Database: %s, Table: %s, Column:  %s", qdcDatabaseAsset.Name, qdcTableAsset.Name, columnAsset.PhysicalName)
 			continue
 		}
 		localViewColumns, err := d.DenodoRepo.GetViewColumns(qdcDatabaseAsset.Name, qdcTableAsset.Name)

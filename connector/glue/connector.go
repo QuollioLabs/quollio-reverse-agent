@@ -105,7 +105,7 @@ func (g GlueConnector) GetAllDatabases() ([]types.Database, error) {
 func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) error {
 	for _, tableAsset := range tableAssets {
 		tableShouldBeUpdated := false
-		databaseAsset := utils.GetSpecifiedAssetFromPath(tableAsset, "schema3")
+		databaseAsset := qdc.GetSpecifiedAssetFromPath(tableAsset, "schema3")
 
 		glueTable, err := g.GlueRepo.GetTable(g.AthenaAccountID, databaseAsset.Name, tableAsset.PhysicalName)
 		if err != nil {

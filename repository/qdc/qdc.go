@@ -8,7 +8,7 @@ import (
 	neturl "net/url"
 	"os"
 	"quollio-reverse-agent/common/logger"
-	"quollio-reverse-agent/utils"
+	"quollio-reverse-agent/common/utils"
 	"strings"
 	"time"
 
@@ -257,6 +257,7 @@ func (q *QDCExternalAPI) GetAllChildAssetsByID(parentAssets []Data) ([]Data, err
 				return nil, err
 			}
 			childAssets = append(childAssets, assets.Data...)
+			q.Logger.Debug("Fetching ChildAssets by parent id %s", parentAsset.ID)
 		}
 	}
 	if os.Getenv("LOG_LEVEL") == "DEBUG" {
@@ -283,4 +284,18 @@ func (q *QDCExternalAPI) GetChildAssetsByParentAsset(assets Data) ([]Data, error
 	}
 	q.Logger.Debug("The number of child asset chunks is %v", len(childAssets))
 	return childAssets, nil
+}
+
+func GetSpecifiedAssetFromPath(asset Data, pathLayer string) Path {
+	path := asset.Path
+	for _, p := range path {
+		if p.PathLayer == pathLayer {
+			return p
+		}
+	}
+	return Path{}
+}
+
+func IsAssetContainsValueAsDescription(asset Data) bool {
+	return asset.Description != ""
 }

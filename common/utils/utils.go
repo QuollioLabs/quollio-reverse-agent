@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/hex"
 	"fmt"
-	"quollio-reverse-agent/repository/qdc"
 	"strings"
 	"unicode"
 
@@ -15,16 +14,6 @@ const (
 	OverwriteIfEmpty = "OVERWRITE_IF_EMPTY" // (Default)only assets whose description is empty string or nil will be updated.
 	OverwriteAll     = "OVERWRITE_ALL"      // all asset description will be updated.
 )
-
-func GetSpecifiedAssetFromPath(asset qdc.Data, pathLayer string) qdc.Path {
-	path := asset.Path
-	for _, p := range path {
-		if p.PathLayer == pathLayer {
-			return p
-		}
-	}
-	return qdc.Path{}
-}
 
 func SplitArrayToChunks(arr []string, size int) [][]string {
 	var chunks [][]string

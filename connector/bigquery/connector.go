@@ -75,8 +75,8 @@ func (b *BigQueryConnector) ReflectDatasetDescToBigQuery(schemaAssets []qdc.Data
 
 func (b *BigQueryConnector) ReflectTableAttributeToBigQuery(tableAssets []qdc.Data) error {
 	for _, tableAsset := range tableAssets {
-		projectAsset := GetSpecifiedAssetFromPath(tableAsset, "schema4")
-		datasetAsset := GetSpecifiedAssetFromPath(tableAsset, "schema3")
+		projectAsset := qdc.GetSpecifiedAssetFromPath(tableAsset, "schema4")
+		datasetAsset := qdc.GetSpecifiedAssetFromPath(tableAsset, "schema3")
 		var metadataToUpdate bq.TableMetadataToUpdate
 
 		tableMetadata, err := b.BigQueryRepo.GetTableMetadata(datasetAsset.Name, tableAsset.PhysicalName)
@@ -158,16 +158,6 @@ func (b *BigQueryConnector) ReflectMetadataToDataCatalog() error {
 		return err
 	}
 	return nil
-}
-
-func GetSpecifiedAssetFromPath(asset qdc.Data, pathLayer string) qdc.Path {
-	path := asset.Path
-	for _, p := range path {
-		if p.PathLayer == pathLayer {
-			return p
-		}
-	}
-	return qdc.Path{}
 }
 
 func MapColumnAssetByColumnName(columnAssets []qdc.Data) map[string]qdc.Data {
