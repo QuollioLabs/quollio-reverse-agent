@@ -109,3 +109,37 @@ func TestIsStringContainJapanese(t *testing.T) {
 		}
 	}
 }
+
+func TestConvertStringToListByWhiteSpace(t *testing.T) {
+	testCases := []struct {
+		Input  string
+		Expect []string
+	}{
+		{
+			Input:  "",
+			Expect: []string{},
+		},
+		{
+			Input:  "db1",
+			Expect: []string{"db1"},
+		},
+		{
+			Input:  "db1 db2",
+			Expect: []string{"db1", "db2"},
+		},
+		{
+			Input:  "db1 db2 db3",
+			Expect: []string{"db1", "db2", "db3"},
+		},
+		{
+			Input:  "db1 db2 db3   db4",
+			Expect: []string{"db1", "db2", "db3", "db4"},
+		},
+	}
+	for _, testCase := range testCases {
+		res := utils.ConvertStringToListByWhiteSpace(testCase.Input)
+		if !reflect.DeepEqual(res, testCase.Expect) {
+			t.Errorf("want %+v but got %+v", testCase.Expect, res)
+		}
+	}
+}

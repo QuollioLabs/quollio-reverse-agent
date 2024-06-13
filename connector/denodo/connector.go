@@ -11,6 +11,8 @@ import (
 	"quollio-reverse-agent/repository/denodo/odbc/models"
 	"quollio-reverse-agent/repository/denodo/rest"
 	"quollio-reverse-agent/repository/qdc"
+
+	"golang.org/x/exp/slices"
 )
 
 type DenodoConnector struct {
@@ -22,6 +24,7 @@ type DenodoConnector struct {
 	AssetCreatedBy       string
 	OverwriteMode        string
 	PrefixForUpdate      string
+	DenodoQueryTargetDBs []string
 	Logger               *logger.BuiltinLogger
 }
 
@@ -38,6 +41,9 @@ func NewDenodoConnector(prefixForUpdate, overwriteMode string, logger *logger.Bu
 	denodoHostName := os.Getenv("DENODO_HOST_NAME")
 	denodoRestAPIPort := os.Getenv("DENODO_REST_API_PORT")
 	denodoRestAPIBaseURL := fmt.Sprintf("https://%s:%s/denodo-data-catalog", denodoHostName, denodoRestAPIPort)
+
+	denodoQueryTargetDB := os.Getenv("DENODO_QUERY_TARGET_DB")
+	denodoQueryTargetList := utils.ConvertStringToListByWhiteSpace(denodoQueryTargetDB)
 
 	denodoDBConfig := odbc.DenodoDBConfig{
 		Database: os.Getenv("DENODO_DEFUALT_DB_NAME"),
@@ -61,6 +67,7 @@ func NewDenodoConnector(prefixForUpdate, overwriteMode string, logger *logger.Bu
 		AssetCreatedBy:       assetCreatedBy,
 		OverwriteMode:        overwriteMode,
 		PrefixForUpdate:      prefixForUpdate,
+		DenodoQueryTargetDBs: denodoQueryTargetList,
 		Logger:               logger,
 	}
 	return connector, nil
@@ -73,7 +80,10 @@ func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 		d.Logger.Error("Failed to GetAllDenodoRootAssets: %s", err.Error())
 		return err
 	}
-	rootAssetsMap := convertQdcAssetListToMap(rootAssets)
+	// MEMO: Filter db assets by a parameter.
+	targetRootAssets := getFilteredRootAssets(d.DenodoQueryTargetDBs, rootAssets)
+
+	rootAssetsMap := convertQdcAssetListToMap(targetRootAssets)
 
 	tableAssets, err := d.QDCExternalAPIClient.GetAllChildAssetsByID(rootAssets)
 	if err != nil {
@@ -273,4 +283,21 @@ func shouldUpdateDenodoVdpColumn(prefixForUpdate, overwriteMode string, viewColu
 func genUpdateString(logicalName, description string) string {
 	s := fmt.Sprintf("【項目名称】%s\n【説明】%s", logicalName, description)
 	return s
+}
+
+func getFilteredRootAssets(targetDBs []string, qdcRootAssets []qdc.Data) []qdc.Data {
+	var targetRootAssets []qdc.Data
+	if 1 <= len(targetDBs) {
+		var filteredRootAssets []qdc.Data
+		for _, rootAsset := range qdcRootAssets {
+			isContained := slices.Contains(targetDBs, rootAsset.PhysicalName)
+			if isContained {
+				filteredRootAssets = append(filteredRootAssets, rootAsset)
+			}
+		}
+		targetRootAssets = filteredRootAssets
+	} else {
+		targetRootAssets = qdcRootAssets
+	}
+	return targetRootAssets
 }

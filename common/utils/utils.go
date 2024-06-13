@@ -66,3 +66,9 @@ func IsStringContainJapanese(s string) bool {
 	}
 	return false
 }
+
+func ConvertStringToListByWhiteSpace(s string) []string {
+	res := strings.Fields(s)
+
+	return res
+}
