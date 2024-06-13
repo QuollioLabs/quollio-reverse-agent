@@ -139,6 +139,7 @@ func (b *BigQueryConnector) ReflectMetadataToDataCatalog() error {
 		return err
 	}
 
+	b.Logger.Info("Start to run ReflectDatasetDescToBigQuery")
 	err = b.ReflectDatasetDescToBigQuery(schemaAssets)
 	if err != nil {
 		b.Logger.Error("Failed to ReflectDatasetDescToBigQuery for schemaAssets: %s", err.Error())
@@ -152,6 +153,7 @@ func (b *BigQueryConnector) ReflectMetadataToDataCatalog() error {
 		return err
 	}
 
+	b.Logger.Info("Start to run ReflectTableAttributeToBigQuery")
 	err = b.ReflectTableAttributeToBigQuery(tableAssets)
 	if err != nil {
 		b.Logger.Error("Failed to ReflectTableAttributeToBigQuery: %s", err.Error())
