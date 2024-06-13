@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"quollio-reverse-agent/repository/denodo/odbc/models"
 	"strings"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -39,6 +40,7 @@ func (c *DenodoDBConfig) NewClient(username, password string) (*Client, error) {
 		db.Close()
 		return nil, fmt.Errorf("sqlx.Ping failed %s", err.Error())
 	}
+	time.Sleep(500 * time.Millisecond)
 	client := Client{
 		Conn: db,
 	}
@@ -48,21 +50,22 @@ func (c *DenodoDBConfig) NewClient(username, password string) (*Client, error) {
 func (c *Client) ExecuteQuery(sqlStmt string) error {
 	var err error
 	_, err = c.Conn.Exec(sqlStmt)
+	time.Sleep(500 * time.Millisecond)
 	if err != nil {
 		return fmt.Errorf("Query Execution failed %s", err.Error())
 	}
 	return nil
 }
 
-func (c *Client) GetDatabasesFromVdp() (*[]models.GetDatabasesResult, error) {
-	dbQuery := `select
-	              db_name
-				  , description
-				from
-				  get_databases()`
+func (c *Client) GetDatabasesFromVdp(targetDBs []string) (*[]models.GetDatabasesResult, error) {
+	dbQuery, args, err := buildQueryToGetDatabases(targetDBs)
+	if err != nil {
+		return nil, fmt.Errorf("buildQueryToGetDatabases failed %s", err.Error())
+	}
 	getDatabasesResults := &[]models.GetDatabasesResult{}
 
-	err := c.Conn.Select(getDatabasesResults, dbQuery)
+	err = c.Conn.Select(getDatabasesResults, dbQuery, args)
+	time.Sleep(500 * time.Millisecond)
 	if err != nil {
 		return nil, fmt.Errorf("GetDatabasesFromVdp failed %s", err.Error())
 	}
@@ -82,6 +85,7 @@ func (c *Client) GetViewsFromVdp(databaseName string) ([]models.GetViewsResult, 
 	getViewsResults := &[]models.GetViewsResult{}
 
 	err := c.Conn.Select(getViewsResults, query, databaseName)
+	time.Sleep(500 * time.Millisecond)
 	if err != nil || getViewsResults == nil {
 		return nil, fmt.Errorf("GetDatabasesFromVdp failed %s", err.Error())
 	}
@@ -107,6 +111,7 @@ func (c *Client) GetViewColumnsFromVdp(databaseName string) ([]models.GetViewCol
 	getViewColumnsResults := &[]models.GetViewColumnsResult{}
 
 	err := c.Conn.Select(getViewColumnsResults, query, databaseName)
+	time.Sleep(500 * time.Millisecond)
 	if err != nil || getViewColumnsResults == nil {
 		return nil, fmt.Errorf("GetViewColumnsFromVdp failed %s", err.Error())
 	}
@@ -167,4 +172,33 @@ func getAlterViewType(viewType int) string {
 
 func escapeSingleQuoteInString(input string) string {
 	return strings.ReplaceAll(input, "'", "''")
+}
+
+func buildQueryToGetDatabases(targetDBList []string) (string, []interface{}, error) {
+	var dbQuery string
+	var args []interface{}
+	if len(targetDBList) == 0 {
+		dbQuery = `
+		    select
+				db_name
+				, description
+			from
+				get_databases()`
+	} else {
+		dbQuery = `
+			select
+				db_name
+				, description
+			from
+				get_databases()
+			where
+				db_name in (?)`
+		var err error
+		dbQuery, args, err = sqlx.In(dbQuery, targetDBList)
+		if err != nil {
+			return "", nil, err
+		}
+	}
+
+	return dbQuery, args, nil
 }

@@ -51,12 +51,14 @@ func main() {
 	logger.Info("Start ReflectMetadataToDataCatalog")
 	switch *systemName {
 	case "bigquery":
+		logger.Info("Start to create NewGlueConnector.")
 		BqConnector, err := bigquery.NewBigqueryConnector(prefixForUpdate, overwriteMode, logger)
 		if err != nil {
 			logger.Error("Failed to NewBigqueryConnector")
 			log.Fatal(err)
 			return
 		}
+		logger.Info("Start to create ReflectMetadataToDataCatalog.")
 		err = BqConnector.ReflectMetadataToDataCatalog()
 		if err != nil {
 			logger.Error("Failed to ReflectMetadataToDataCatalog")
@@ -64,12 +66,14 @@ func main() {
 			return
 		}
 	case "athena":
+		logger.Info("Start to create NewGlueConnector.")
 		GlueConnector, err := glue.NewGlueConnector(prefixForUpdate, overwriteMode, logger)
 		if err != nil {
 			logger.Error("Failed to NewGlueConnector")
 			log.Fatal(err)
 			return
 		}
+		logger.Info("Start to create ReflectMetadataToDataCatalog.")
 		err = GlueConnector.ReflectMetadataToDataCatalog()
 		if err != nil {
 			logger.Error("Failed to ReflectMetadataToDataCatalog")
@@ -77,6 +81,7 @@ func main() {
 			return
 		}
 	case "denodo":
+		logger.Info("Start to create DenodoConnector.")
 		DenodoConnector, err := denodo.NewDenodoConnector(prefixForUpdate, overwriteMode, logger)
 		if err != nil {
 			logger.Error("Failed to NewDenodoConnector")
@@ -84,6 +89,8 @@ func main() {
 			return
 		}
 		defer DenodoConnector.DenodoDBClient.Conn.Close()
+		logger.Info("Finish creating DenodoConnector.")
+		logger.Info("Start to run ReflectMetadataToDataCatalog.")
 		err = DenodoConnector.ReflectMetadataToDataCatalog()
 		if err != nil {
 			logger.Error("Failed to ReflectMetadataToDataCatalog")

@@ -11,6 +11,8 @@ import (
 	"quollio-reverse-agent/repository/denodo/odbc/models"
 	"quollio-reverse-agent/repository/denodo/rest"
 	"quollio-reverse-agent/repository/qdc"
+
+	"golang.org/x/exp/slices"
 )
 
 type DenodoConnector struct {
@@ -22,6 +24,7 @@ type DenodoConnector struct {
 	AssetCreatedBy       string
 	OverwriteMode        string
 	PrefixForUpdate      string
+	DenodoQueryTargetDBs []string
 	Logger               *logger.BuiltinLogger
 }
 
@@ -38,6 +41,9 @@ func NewDenodoConnector(prefixForUpdate, overwriteMode string, logger *logger.Bu
 	denodoHostName := os.Getenv("DENODO_HOST_NAME")
 	denodoRestAPIPort := os.Getenv("DENODO_REST_API_PORT")
 	denodoRestAPIBaseURL := fmt.Sprintf("https://%s:%s/denodo-data-catalog", denodoHostName, denodoRestAPIPort)
+
+	denodoQueryTargetDB := os.Getenv("DENODO_QUERY_TARGET_DB")
+	denodoQueryTargetList := utils.ConvertStringToListByWhiteSpace(denodoQueryTargetDB)
 
 	denodoDBConfig := odbc.DenodoDBConfig{
 		Database: os.Getenv("DENODO_DEFUALT_DB_NAME"),
@@ -61,6 +67,7 @@ func NewDenodoConnector(prefixForUpdate, overwriteMode string, logger *logger.Bu
 		AssetCreatedBy:       assetCreatedBy,
 		OverwriteMode:        overwriteMode,
 		PrefixForUpdate:      prefixForUpdate,
+		DenodoQueryTargetDBs: denodoQueryTargetList,
 		Logger:               logger,
 	}
 	return connector, nil
@@ -73,15 +80,20 @@ func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 		d.Logger.Error("Failed to GetAllDenodoRootAssets: %s", err.Error())
 		return err
 	}
-	rootAssetsMap := convertQdcAssetListToMap(rootAssets)
+	// MEMO: Filter db assets by a parameter.
+	targetRootAssets := getFilteredRootAssets(d.DenodoQueryTargetDBs, rootAssets)
 
-	tableAssets, err := d.QDCExternalAPIClient.GetAllChildAssetsByID(rootAssets)
+	rootAssetsMap := convertQdcAssetListToMap(targetRootAssets)
+
+	d.Logger.Info("Get table assets from schema assets")
+	tableAssets, err := d.QDCExternalAPIClient.GetAllChildAssetsByID(targetRootAssets)
 	if err != nil {
 		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
 		return err
 	}
 	tableAssetsMap := convertQdcAssetListToMap(tableAssets)
 
+	d.Logger.Info("Get column assets from table assets")
 	columnAssets, err := d.QDCExternalAPIClient.GetAllChildAssetsByID(tableAssets)
 	if err != nil {
 		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
@@ -89,11 +101,12 @@ func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 	}
 	columnAssetsMap := convertQdcAssetListToMap(columnAssets)
 
-	d.Logger.Info("Update Vdp assets metadata with qdic assets")
+	d.Logger.Info("Start to ReflectVdpMetadataToDataCatalog. Will update VDP resources")
 	err = d.ReflectVdpMetadataToDataCatalog(rootAssetsMap, tableAssetsMap, columnAssetsMap)
 	if err != nil {
 		return err
 	}
+	d.Logger.Info("Start to ReflectVdpMetadataToDataCatalog. Will update LocalCatalog resources")
 	err = d.ReflectDenodoDataCatalogMetadataToDataCatalog(rootAssetsMap, tableAssetsMap, columnAssetsMap)
 	if err != nil {
 		return err
@@ -103,7 +116,7 @@ func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 
 func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcTableAssetsMap, qdcColumnAssetsMap map[string]qdc.Data) error {
 	d.Logger.Info("Start to update denodo vdp database assets")
-	vdpDatabases, err := d.DenodoDBClient.GetDatabasesFromVdp()
+	vdpDatabases, err := d.DenodoDBClient.GetDatabasesFromVdp(d.DenodoQueryTargetDBs)
 	if err != nil {
 		return err
 	}
@@ -119,6 +132,7 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 			return err
 		}
 		d.DenodoDBClient = client
+		d.Logger.Info("Connected to %s", vdpDatabase.DatabaseName)
 
 		d.Logger.Info("Start to update denodo database assets")
 		databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, vdpDatabase.DatabaseName, "schema")
@@ -184,12 +198,18 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 }
 
 func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog(qdcRootAssetsMap, qdcTableAssetsMap, qdcColumnAssetsMap map[string]qdc.Data) error {
-	d.Logger.Info("Start to update denodo database assets")
+	d.Logger.Info("Start to update denodo local database assets")
 	localDatabases, err := d.DenodoRepo.GetLocalDatabases()
 	if err != nil {
 		return err
 	}
 	for _, localDatabase := range localDatabases {
+		isLocalDatabaseContained := slices.Contains(d.DenodoQueryTargetDBs, localDatabase.DatabaseName)
+		if !isLocalDatabaseContained {
+			d.Logger.Info("Skip ReflectLocalDatabaseDescToDenodo because %s is not contained targetDBList", localDatabase.DatabaseName)
+			continue
+		}
+		d.Logger.Info("Start to run ReflectLocalDatabaseDescToDenodo")
 		err = d.ReflectLocalDatabaseDescToDenodo(localDatabase, qdcRootAssetsMap)
 		if err != nil {
 			d.Logger.Error("Failed to ReflectLocalDatabaseDescToDenodo: %s", err.Error())
@@ -273,4 +293,21 @@ func shouldUpdateDenodoVdpColumn(prefixForUpdate, overwriteMode string, viewColu
 func genUpdateString(logicalName, description string) string {
 	s := fmt.Sprintf("【項目名称】%s\n【説明】%s", logicalName, description)
 	return s
+}
+
+func getFilteredRootAssets(targetDBs []string, qdcRootAssets []qdc.Data) []qdc.Data {
+	var targetRootAssets []qdc.Data
+	if 1 <= len(targetDBs) {
+		var filteredRootAssets []qdc.Data
+		for _, rootAsset := range qdcRootAssets {
+			isContained := slices.Contains(targetDBs, rootAsset.PhysicalName)
+			if isContained {
+				filteredRootAssets = append(filteredRootAssets, rootAsset)
+			}
+		}
+		targetRootAssets = filteredRootAssets
+	} else {
+		targetRootAssets = qdcRootAssets
+	}
+	return targetRootAssets
 }

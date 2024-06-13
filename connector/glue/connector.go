@@ -161,6 +161,7 @@ func (g *GlueConnector) ReflectMetadataToDataCatalog() error {
 		return err
 	}
 
+	g.Logger.Info("Start to run ReflectDatabaseDescToAthena")
 	err = g.ReflectDatabaseDescToAthena(schemaAssets)
 	if err != nil {
 		g.Logger.Error("Failed to ReflectDatabaseDescToAthena for schemaAssets: %s", err.Error())
@@ -174,6 +175,7 @@ func (g *GlueConnector) ReflectMetadataToDataCatalog() error {
 		return err
 	}
 
+	g.Logger.Info("Start to run ReflectTableAttributeToAthena")
 	err = g.ReflectTableAttributeToAthena(tableAssets)
 	if err != nil {
 		g.Logger.Error("Failed to ReflectTableAttributeToAthena: %s", err.Error())

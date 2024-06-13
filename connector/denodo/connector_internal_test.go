@@ -5,6 +5,7 @@ import (
 	"quollio-reverse-agent/common/utils"
 	"quollio-reverse-agent/repository/denodo/odbc/models"
 	"quollio-reverse-agent/repository/qdc"
+	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -1001,6 +1002,116 @@ func TestGenUpdateString(t *testing.T) {
 		res := genUpdateString(testCase.Input.LogicalName, testCase.Input.Description)
 		if res != testCase.Expect {
 			t.Errorf("Test failed want %v but got %s", testCase.Expect, res)
+		}
+	}
+}
+
+func TestFilterRootAsset(t *testing.T) {
+	testCases := []struct {
+		Input struct {
+			QdcRootAssets   []qdc.Data
+			TargetDatabases []string
+		}
+		Expect []qdc.Data
+	}{
+		{
+			Input: struct {
+				QdcRootAssets   []qdc.Data
+				TargetDatabases []string
+			}{
+				QdcRootAssets: []qdc.Data{
+					{
+						PhysicalName: "db1",
+					},
+					{
+						PhysicalName: "db2",
+					},
+				},
+				TargetDatabases: []string{},
+			},
+			Expect: []qdc.Data{
+				{
+					PhysicalName: "db1",
+				},
+				{
+					PhysicalName: "db2",
+				},
+			},
+		},
+		{
+			Input: struct {
+				QdcRootAssets   []qdc.Data
+				TargetDatabases []string
+			}{
+				QdcRootAssets: []qdc.Data{
+					{
+						PhysicalName: "db1",
+					},
+					{
+						PhysicalName: "db2",
+					},
+				},
+				TargetDatabases: []string{"db1"},
+			},
+			Expect: []qdc.Data{
+				{
+					PhysicalName: "db1",
+				},
+			},
+		},
+		{
+			Input: struct {
+				QdcRootAssets   []qdc.Data
+				TargetDatabases []string
+			}{
+				QdcRootAssets: []qdc.Data{
+					{
+						PhysicalName: "db1",
+					},
+					{
+						PhysicalName: "db2",
+					},
+				},
+				TargetDatabases: []string{"db1", "db2"},
+			},
+			Expect: []qdc.Data{
+				{
+					PhysicalName: "db1",
+				},
+				{
+					PhysicalName: "db2",
+				},
+			},
+		},
+		{
+			Input: struct {
+				QdcRootAssets   []qdc.Data
+				TargetDatabases []string
+			}{
+				QdcRootAssets: []qdc.Data{
+					{
+						PhysicalName: "db1",
+					},
+					{
+						PhysicalName: "db2",
+					},
+				},
+				TargetDatabases: []string{"db1", "db2", "db3"},
+			},
+			Expect: []qdc.Data{
+				{
+					PhysicalName: "db1",
+				},
+				{
+					PhysicalName: "db2",
+				},
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		res := getFilteredRootAssets(testCase.Input.TargetDatabases, testCase.Input.QdcRootAssets)
+		if !reflect.DeepEqual(res, testCase.Expect) {
+			t.Errorf("want %+v but got %+v", testCase.Expect, res)
 		}
 	}
 }
