@@ -83,6 +83,7 @@ func main() {
 			log.Fatal(err)
 			return
 		}
+		defer DenodoConnector.DenodoDBClient.Conn.Close()
 		err = DenodoConnector.ReflectMetadataToDataCatalog()
 		if err != nil {
 			logger.Error("Failed to ReflectMetadataToDataCatalog")

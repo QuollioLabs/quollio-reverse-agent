@@ -178,6 +178,7 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 				}
 			}
 		}
+		d.DenodoDBClient.Conn.Close()
 	}
 	return nil
 }
