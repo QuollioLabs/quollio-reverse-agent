@@ -240,7 +240,7 @@ func (q *QDCExternalAPI) GetAllRootAssets(serviceName, createdBy string) ([]Data
 		case "":
 			return rootAssets, nil
 		default:
-			q.Logger.Debug("GetAllBigQueryRootAssets will continue. lastAssetID: %s", lastAssetID)
+			q.Logger.Debug("GetAllRootAssets will continue. lastAssetID: %s", lastAssetID)
 			lastAssetID = assetResponse.LastID
 		}
 	}
