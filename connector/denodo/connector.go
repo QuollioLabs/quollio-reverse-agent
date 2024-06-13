@@ -85,6 +85,7 @@ func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 
 	rootAssetsMap := convertQdcAssetListToMap(targetRootAssets)
 
+	d.Logger.Info("Get table assets from schema assets")
 	tableAssets, err := d.QDCExternalAPIClient.GetAllChildAssetsByID(targetRootAssets)
 	if err != nil {
 		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
@@ -92,6 +93,7 @@ func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 	}
 	tableAssetsMap := convertQdcAssetListToMap(tableAssets)
 
+	d.Logger.Info("Get column assets from table assets")
 	columnAssets, err := d.QDCExternalAPIClient.GetAllChildAssetsByID(tableAssets)
 	if err != nil {
 		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
@@ -99,11 +101,12 @@ func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 	}
 	columnAssetsMap := convertQdcAssetListToMap(columnAssets)
 
-	d.Logger.Info("Update Vdp assets metadata with qdic assets")
+	d.Logger.Info("Start to ReflectVdpMetadataToDataCatalog. Will update VDP resources")
 	err = d.ReflectVdpMetadataToDataCatalog(rootAssetsMap, tableAssetsMap, columnAssetsMap)
 	if err != nil {
 		return err
 	}
+	d.Logger.Info("Start to ReflectVdpMetadataToDataCatalog. Will update LocalCatalog resources")
 	err = d.ReflectDenodoDataCatalogMetadataToDataCatalog(rootAssetsMap, tableAssetsMap, columnAssetsMap)
 	if err != nil {
 		return err
@@ -129,6 +132,7 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 			return err
 		}
 		d.DenodoDBClient = client
+		d.Logger.Info("Connected to %s", vdpDatabase.DatabaseName)
 
 		d.Logger.Info("Start to update denodo database assets")
 		databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, vdpDatabase.DatabaseName, "schema")
@@ -194,7 +198,7 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 }
 
 func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog(qdcRootAssetsMap, qdcTableAssetsMap, qdcColumnAssetsMap map[string]qdc.Data) error {
-	d.Logger.Info("Start to update denodo database assets")
+	d.Logger.Info("Start to update denodo local database assets")
 	localDatabases, err := d.DenodoRepo.GetLocalDatabases()
 	if err != nil {
 		return err
@@ -205,6 +209,7 @@ func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog(qdcRootA
 			d.Logger.Info("Skip ReflectLocalDatabaseDescToDenodo because %s is not contained targetDBList", localDatabase.DatabaseName)
 			continue
 		}
+		d.Logger.Info("Start to run ReflectLocalDatabaseDescToDenodo")
 		err = d.ReflectLocalDatabaseDescToDenodo(localDatabase, qdcRootAssetsMap)
 		if err != nil {
 			d.Logger.Error("Failed to ReflectLocalDatabaseDescToDenodo: %s", err.Error())
