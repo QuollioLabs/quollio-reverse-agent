@@ -200,6 +200,11 @@ func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog(qdcRootA
 		return err
 	}
 	for _, localDatabase := range localDatabases {
+		isLocalDatabaseContained := slices.Contains(d.DenodoQueryTargetDBs, localDatabase.DatabaseName)
+		if !isLocalDatabaseContained {
+			d.Logger.Info("Skip ReflectLocalDatabaseDescToDenodo because %s is not contained targetDBList", localDatabase.DatabaseName)
+			continue
+		}
 		err = d.ReflectLocalDatabaseDescToDenodo(localDatabase, qdcRootAssetsMap)
 		if err != nil {
 			d.Logger.Error("Failed to ReflectLocalDatabaseDescToDenodo: %s", err.Error())
