@@ -199,6 +199,7 @@ func buildQueryToGetDatabases(targetDBList []string) (string, []interface{}, err
 			return "", nil, err
 		}
 	}
+	dbQuery = sqlx.Rebind(sqlx.DOLLAR, dbQuery)
 
 	return dbQuery, args, nil
 }
