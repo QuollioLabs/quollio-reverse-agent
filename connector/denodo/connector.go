@@ -113,7 +113,7 @@ func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 
 func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcTableAssetsMap, qdcColumnAssetsMap map[string]qdc.Data) error {
 	d.Logger.Info("Start to update denodo vdp database assets")
-	vdpDatabases, err := d.DenodoDBClient.GetDatabasesFromVdp()
+	vdpDatabases, err := d.DenodoDBClient.GetDatabasesFromVdp(d.DenodoQueryTargetDBs)
 	if err != nil {
 		return err
 	}

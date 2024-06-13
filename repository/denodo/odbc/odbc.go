@@ -54,15 +54,14 @@ func (c *Client) ExecuteQuery(sqlStmt string) error {
 	return nil
 }
 
-func (c *Client) GetDatabasesFromVdp() (*[]models.GetDatabasesResult, error) {
-	dbQuery := `select
-	              db_name
-				  , description
-				from
-				  get_databases()`
+func (c *Client) GetDatabasesFromVdp(targetDBs []string) (*[]models.GetDatabasesResult, error) {
+	dbQuery, args, err := buildQueryToGetDatabases(targetDBs)
+	if err != nil {
+		return nil, fmt.Errorf("buildQueryToGetDatabases failed %s", err.Error())
+	}
 	getDatabasesResults := &[]models.GetDatabasesResult{}
 
-	err := c.Conn.Select(getDatabasesResults, dbQuery)
+	err = c.Conn.Select(getDatabasesResults, dbQuery, args)
 	if err != nil {
 		return nil, fmt.Errorf("GetDatabasesFromVdp failed %s", err.Error())
 	}
@@ -167,4 +166,33 @@ func getAlterViewType(viewType int) string {
 
 func escapeSingleQuoteInString(input string) string {
 	return strings.ReplaceAll(input, "'", "''")
+}
+
+func buildQueryToGetDatabases(targetDBList []string) (string, []interface{}, error) {
+	var dbQuery string
+	var args []interface{}
+	if len(targetDBList) == 0 {
+		dbQuery = `
+		    select
+				db_name
+				, description
+			from
+				get_databases()`
+	} else {
+		dbQuery = `
+			select
+				db_name
+				, description
+			from
+				get_databases()
+			where
+				db_name in (?)`
+		var err error
+		dbQuery, args, err = sqlx.In(dbQuery, targetDBList)
+		if err != nil {
+			return "", nil, err
+		}
+	}
+
+	return dbQuery, args, nil
 }
