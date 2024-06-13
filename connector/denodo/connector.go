@@ -85,7 +85,7 @@ func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
 
 	rootAssetsMap := convertQdcAssetListToMap(targetRootAssets)
 
-	tableAssets, err := d.QDCExternalAPIClient.GetAllChildAssetsByID(rootAssets)
+	tableAssets, err := d.QDCExternalAPIClient.GetAllChildAssetsByID(targetRootAssets)
 	if err != nil {
 		d.Logger.Error("Failed to GetAllChildAssetsByID for tableAssets: %s", err.Error())
 		return err
