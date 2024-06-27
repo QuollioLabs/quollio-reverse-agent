@@ -34,6 +34,7 @@ func (c *DenodoDBConfig) NewClient(username, password string) (*Client, error) {
 
 	db, err := sqlx.Open("postgres", denodoConnStr)
 	if err != nil {
+		db.Close()
 		return nil, fmt.Errorf("sqlx.Open failed %s", err.Error())
 	}
 	if err = db.Ping(); err != nil {

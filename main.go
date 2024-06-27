@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"quollio-reverse-agent/common/logger"
@@ -24,10 +25,7 @@ func init() {
 	}
 }
 
-func main() {
-	systemName := flag.String("system-name", os.Getenv("SYSTEM_NAME"), "You need to choose which connector to use.")
-	flag.Parse()
-
+func runReverseAgent(systemName *string) error {
 	logger := logger.NewBuiltinLogger()
 	logger.Debug("System name: %s", *systemName)
 
@@ -55,38 +53,33 @@ func main() {
 		BqConnector, err := bigquery.NewBigqueryConnector(prefixForUpdate, overwriteMode, logger)
 		if err != nil {
 			logger.Error("Failed to NewBigqueryConnector")
-			log.Fatal(err)
-			return
+			return fmt.Errorf("Failed to NewBigqueryConnector")
 		}
 		logger.Info("Start to create ReflectMetadataToDataCatalog.")
 		err = BqConnector.ReflectMetadataToDataCatalog()
 		if err != nil {
 			logger.Error("Failed to ReflectMetadataToDataCatalog")
-			log.Fatal(err)
-			return
+			return fmt.Errorf("Failed to ReflectMetadataToDataCatalog for BigQuery")
 		}
 	case "athena":
 		logger.Info("Start to create NewGlueConnector.")
 		GlueConnector, err := glue.NewGlueConnector(prefixForUpdate, overwriteMode, logger)
 		if err != nil {
 			logger.Error("Failed to NewGlueConnector")
-			log.Fatal(err)
-			return
+			return fmt.Errorf("Failed to NewGlueConnector")
 		}
 		logger.Info("Start to create ReflectMetadataToDataCatalog.")
 		err = GlueConnector.ReflectMetadataToDataCatalog()
 		if err != nil {
 			logger.Error("Failed to ReflectMetadataToDataCatalog")
-			log.Fatal(err)
-			return
+			return fmt.Errorf("Failed to ReflectMetadataToDataCatalog for Athena")
 		}
 	case "denodo":
 		logger.Info("Start to create DenodoConnector.")
 		DenodoConnector, err := denodo.NewDenodoConnector(prefixForUpdate, overwriteMode, logger)
 		if err != nil {
 			logger.Error("Failed to NewDenodoConnector")
-			log.Fatal(err)
-			return
+			return fmt.Errorf("Failed to NewDenodoConnector")
 		}
 		defer DenodoConnector.DenodoDBClient.Conn.Close()
 		logger.Info("Finish creating DenodoConnector.")
@@ -94,12 +87,21 @@ func main() {
 		err = DenodoConnector.ReflectMetadataToDataCatalog()
 		if err != nil {
 			logger.Error("Failed to ReflectMetadataToDataCatalog")
-			log.Fatal(err)
-			return
+			return fmt.Errorf("Failed to ReflectMetadataToDataCatalog for Denodo")
 		}
 	default:
-		log.Fatal("You chose invalid service name.")
-		return
+		return fmt.Errorf("You chose invalid service name.")
 	}
 	logger.Info("Done ReflectMetadataToDataCatalog")
+	return nil
+}
+
+func main() {
+	systemName := flag.String("system-name", os.Getenv("SYSTEM_NAME"), "You need to choose which connector to use.")
+	flag.Parse()
+
+	err := runReverseAgent(systemName)
+	if err != nil {
+		log.Fatal()
+	}
 }
