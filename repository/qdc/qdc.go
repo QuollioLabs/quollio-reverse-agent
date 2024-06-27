@@ -105,6 +105,9 @@ func (q *QDCExternalAPI) postRequest(url string, payload *strings.Reader) (*http
 	if err != nil {
 		return &http.Response{}, err
 	}
+	defer resp.Body.Close()
+	time.Sleep(1 * time.Second)
+
 	switch resp.StatusCode {
 	case http.StatusOK:
 		return resp, nil
@@ -136,6 +139,7 @@ func (q *QDCExternalAPI) GetAccessToken() (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
+	time.Sleep(1 * time.Second)
 
 	switch resp.StatusCode {
 	case http.StatusOK:
