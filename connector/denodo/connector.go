@@ -74,6 +74,7 @@ func NewDenodoConnector(prefixForUpdate, overwriteMode string, logger *logger.Bu
 }
 
 func (d *DenodoConnector) ReflectMetadataToDataCatalog() error {
+	defer d.DenodoDBClient.Conn.DB.Close()
 	d.Logger.Info("Get Denodo assets from QDIC")
 	rootAssets, err := d.QDCExternalAPIClient.GetAllRootAssets("denodo", d.AssetCreatedBy)
 	if err != nil {
