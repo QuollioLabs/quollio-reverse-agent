@@ -93,7 +93,7 @@ func TestBuildQueryToGetDatabases(t *testing.T) {
 					from
 						get_databases()
 					where
-						db_name in (?)`,
+						db_name in ($1)`,
 				Params: []interface{}{"db1"},
 			},
 		},
@@ -110,7 +110,7 @@ func TestBuildQueryToGetDatabases(t *testing.T) {
 					from
 						get_databases()
 					where
-						db_name in (?, ?)`,
+						db_name in ($1, $2)`,
 				Params: []interface{}{"db1", "db2"},
 			},
 		},
