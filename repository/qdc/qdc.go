@@ -105,7 +105,6 @@ func (q *QDCExternalAPI) postRequest(url string, payload *strings.Reader) (*http
 	if err != nil {
 		return &http.Response{}, err
 	}
-	defer resp.Body.Close()
 	time.Sleep(1 * time.Second)
 
 	switch resp.StatusCode {
@@ -222,7 +221,7 @@ func (q *QDCExternalAPI) GetAllRootAssets(serviceName, createdBy string) ([]Data
 	for {
 		assetResponse, err := q.GetAssetByType("schema", lastAssetID)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to GetAssetByType. lastAssetID: %s", lastAssetID)
+			return nil, fmt.Errorf("Failed to GetAssetByType. %s lastAssetID: %s", err.Error(), lastAssetID)
 		}
 		for _, assetData := range assetResponse.Data {
 			switch assetData.ServiceName {
