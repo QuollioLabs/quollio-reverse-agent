@@ -65,7 +65,7 @@ func (c *Client) GetDatabasesFromVdp(targetDBs []string) (*[]models.GetDatabases
 	}
 	getDatabasesResults := &[]models.GetDatabasesResult{}
 
-	err = c.Conn.Select(getDatabasesResults, dbQuery, args)
+	err = c.Conn.Select(getDatabasesResults, dbQuery, args...)
 	time.Sleep(500 * time.Millisecond)
 	if err != nil {
 		return nil, fmt.Errorf("GetDatabasesFromVdp failed %s", err.Error())
@@ -200,6 +200,7 @@ func buildQueryToGetDatabases(targetDBList []string) (string, []interface{}, err
 			return "", nil, err
 		}
 	}
+	dbQuery = sqlx.Rebind(sqlx.DOLLAR, dbQuery)
 
 	return dbQuery, args, nil
 }
