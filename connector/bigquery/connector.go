@@ -55,6 +55,10 @@ func NewBigqueryConnector(prefixForUpdate, overwriteMode string, logger *logger.
 
 func (b *BigQueryConnector) ReflectDatasetDescToBigQuery(schemaAssets []qdc.Data) error {
 	for _, schemaAsset := range schemaAssets {
+		if schemaAsset.IsLost {
+			b.Logger.Debug("Skip schema update because it is lost in qdc : %s", schemaAsset.PhysicalName)
+			continue
+		}
 		datasetMetadata, err := b.BigQueryRepo.GetDatasetMetadata(schemaAsset.PhysicalName)
 		if err != nil {
 			b.Logger.Error("Failed to GetDatasetMetadata. : %s", schemaAsset.PhysicalName)
@@ -77,6 +81,11 @@ func (b *BigQueryConnector) ReflectTableAttributeToBigQuery(tableAssets []qdc.Da
 	for _, tableAsset := range tableAssets {
 		projectAsset := qdc.GetSpecifiedAssetFromPath(tableAsset, "schema4")
 		datasetAsset := qdc.GetSpecifiedAssetFromPath(tableAsset, "schema3")
+
+		if tableAsset.IsLost {
+			b.Logger.Debug("Skip table update because it is lost in qdc : %s->%s->%s ", projectAsset.Name, datasetAsset.Name, tableAsset.PhysicalName)
+			continue
+		}
 		var metadataToUpdate bq.TableMetadataToUpdate
 
 		tableMetadata, err := b.BigQueryRepo.GetTableMetadata(datasetAsset.Name, tableAsset.PhysicalName)
@@ -105,6 +114,10 @@ func (b *BigQueryConnector) ReflectTableAttributeToBigQuery(tableAssets []qdc.Da
 
 		// Update table overview
 		bqTableFQN := fmt.Sprintf("bigquery:%s.%s.%s", projectAsset.Name, datasetAsset.Name, tableAsset.PhysicalName)
+		if !qdc.IsAssetContainsValueAsDescription(tableAsset) {
+			b.Logger.Debug("Skip LookupEntry and Update View because the description of qdc table asset is empty. Project: %s, Dataset: %s, Table: %s ", projectAsset.Name, datasetAsset.Name, tableAsset.PhysicalName)
+			continue
+		}
 		tableAssetEntry, err := b.DataplexRepo.LookupEntry(bqTableFQN, projectAsset.Name, tableMetadata.Location)
 		if err != nil {
 			b.Logger.Error("Failed to LookupEntry.: %s", tableAsset.PhysicalName)

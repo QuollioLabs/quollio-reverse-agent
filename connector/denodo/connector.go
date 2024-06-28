@@ -138,6 +138,10 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 		d.Logger.Info("Start to update denodo database assets")
 		databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, vdpDatabase.DatabaseName, "schema")
 		if qdcDatabaseAsset, ok := qdcRootAssetsMap[databaseGlobalID]; ok {
+			if qdcDatabaseAsset.IsLost {
+				d.Logger.Debug("Skip database update because it is lost in qdc : %s", qdcDatabaseAsset.PhysicalName)
+				continue
+			}
 			if shouldUpdateDenodoVdpDatabase(d.PrefixForUpdate, d.OverwriteMode, vdpDatabase, qdcDatabaseAsset) {
 				descForUpdate := genUpdateString(qdcDatabaseAsset.LogicalName, qdcDatabaseAsset.Description)
 				descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, descForUpdate)
@@ -158,6 +162,10 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 			tableFQN := fmt.Sprint(vdpDatabase.DatabaseName, vdpTableAsset.ViewName)
 			tableGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, tableFQN, "table")
 			if qdcTableAsset, ok := qdcTableAssetsMap[tableGlobalID]; ok {
+				if qdcTableAsset.IsLost {
+					d.Logger.Debug("Skip table update because it is lost in qdc : %s", qdcTableAsset.PhysicalName)
+					continue
+				}
 				if shouldUpdateDenodoVdpTable(d.PrefixForUpdate, d.OverwriteMode, vdpTableAsset, qdcTableAsset) {
 					descForUpdate := genUpdateString(qdcTableAsset.LogicalName, qdcTableAsset.Description)
 					descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, descForUpdate)
@@ -178,6 +186,10 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 			columnFQN := fmt.Sprint(vdpDatabase.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
 			columnGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, columnFQN, "column")
 			if qdcColumnAsset, ok := qdcColumnAssetsMap[columnGlobalID]; ok {
+				if qdcColumnAsset.IsLost {
+					d.Logger.Debug("Skip column update because it is lost in qdc : %s", qdcColumnAsset.PhysicalName)
+					continue
+				}
 				if vdpColumnAsset.ViewType != 1 {
 					d.Logger.Debug("Skip update view. only derived view will be updated. database name: %s, table name: %s column name: %s", vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
 					continue

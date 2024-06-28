@@ -12,6 +12,11 @@ import (
 func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.Database, dbAssets map[string]qdc.Data) error {
 	databaseGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, localDatabase.DatabaseName, "schema")
 	if qdcDBAsset, ok := dbAssets[databaseGlobalID]; ok {
+		if qdcDBAsset.IsLost {
+			d.Logger.Debug("Skip db update because it is lost in qdc : %s", qdcDBAsset.PhysicalName)
+			return nil
+		}
+
 		if shouldUpdateDenodoLocalDatabase(d.PrefixForUpdate, d.OverwriteMode, localDatabase, qdcDBAsset) {
 			descForUpdate := genUpdateString(qdcDBAsset.LogicalName, qdcDBAsset.Description)
 			descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, descForUpdate)
@@ -42,6 +47,11 @@ func (d *DenodoConnector) ReflectLocalDatabaseDescToDenodo(localDatabase models.
 func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[string]qdc.Data) error {
 	for _, tableAsset := range tableAssets {
 		qdcDatabaseAsset := qdc.GetSpecifiedAssetFromPath(tableAsset, "schema3")
+		if tableAsset.IsLost {
+			d.Logger.Debug("Skip table update because it is lost in qdc : %s->%s", qdcDatabaseAsset.Name, tableAsset.PhysicalName)
+			continue
+		}
+
 		if utils.IsStringContainJapanese(qdcDatabaseAsset.Name) || utils.IsStringContainJapanese(tableAsset.PhysicalName) {
 			d.Logger.Warning("Skip to update table because API doesn't allow japanese letter as an input. Database: %s, Table: %s", qdcDatabaseAsset.Name, tableAsset.PhysicalName)
 			continue
@@ -85,6 +95,11 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 	for _, columnAsset := range columnAssets {
 		qdcDatabaseAsset := qdc.GetSpecifiedAssetFromPath(columnAsset, "schema3")
 		qdcTableAsset := qdc.GetSpecifiedAssetFromPath(columnAsset, "table")
+		if columnAsset.IsLost {
+			d.Logger.Debug("Skip column update because it is lost in qdc : %s->%s->%s", qdcDatabaseAsset.Name, qdcTableAsset.Name, columnAsset.PhysicalName)
+			continue
+		}
+
 		if utils.IsStringContainJapanese(qdcDatabaseAsset.Name) || utils.IsStringContainJapanese(qdcTableAsset.Name) {
 			d.Logger.Warning("Skip to update table because API doesn't allow japanese letter as an input. Database: %s, Table: %s", qdcDatabaseAsset.Name, qdcTableAsset.Name)
 			continue

@@ -60,6 +60,11 @@ func (g *GlueConnector) ReflectDatabaseDescToAthena(dbAssets []qdc.Data) error {
 	mapDBAssetByDBName := mapDBAssetByDBName(allGlueDBs)
 
 	for _, dbAsset := range dbAssets {
+		if dbAsset.IsLost {
+			g.Logger.Debug("Skip schema update because it is lost in qdc : %s", dbAsset.PhysicalName)
+			continue
+		}
+
 		if glueDB, ok := mapDBAssetByDBName[dbAsset.PhysicalName]; ok {
 			updateDatabaseInput := genUpdateDatabaseInput(glueDB)
 
@@ -106,6 +111,11 @@ func (g *GlueConnector) ReflectTableAttributeToAthena(tableAssets []qdc.Data) er
 	for _, tableAsset := range tableAssets {
 		tableShouldBeUpdated := false
 		databaseAsset := qdc.GetSpecifiedAssetFromPath(tableAsset, "schema3")
+
+		if tableAsset.IsLost {
+			g.Logger.Debug("Skip table update because it is lost in qdc : %s->%s", databaseAsset.Name, tableAsset.PhysicalName)
+			continue
+		}
 
 		glueTable, err := g.GlueRepo.GetTable(g.AthenaAccountID, databaseAsset.Name, tableAsset.PhysicalName)
 		if err != nil {
