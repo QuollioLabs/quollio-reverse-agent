@@ -105,6 +105,10 @@ func (b *BigQueryConnector) ReflectTableAttributeToBigQuery(tableAssets []qdc.Da
 
 		// Update table overview
 		bqTableFQN := fmt.Sprintf("bigquery:%s.%s.%s", projectAsset.Name, datasetAsset.Name, tableAsset.PhysicalName)
+		if !qdc.IsAssetContainsValueAsDescription(tableAsset) {
+			b.Logger.Debug("Skip LookupEntry and Update View because the description of qdc table asset is empty. Project: %s, Dataset: %s, Table: %s ", projectAsset.Name, datasetAsset.Name, tableAsset.PhysicalName)
+			continue
+		}
 		tableAssetEntry, err := b.DataplexRepo.LookupEntry(bqTableFQN, projectAsset.Name, tableMetadata.Location)
 		if err != nil {
 			b.Logger.Error("Failed to LookupEntry.: %s", tableAsset.PhysicalName)
