@@ -2,6 +2,7 @@ package glue
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"quollio-reverse-agent/common/logger"
 	"quollio-reverse-agent/common/utils"
@@ -38,7 +39,10 @@ func NewGlueConnector(prefixForUpdate, overwriteMode string, logger *logger.Buil
 	qdcClientID := os.Getenv("QDC_CLIENT_ID")
 	qdcClientSecret := os.Getenv("QDC_CLIENT_SECRET")
 	assetCreatedBy := os.Getenv("QDC_ASSET_CREATED_BY")
-	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret, logger)
+	externalAPI, err := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret, logger)
+	if err != nil {
+		return GlueConnector{}, fmt.Errorf("Failed to initialize QDCExternalAPI client in Glue Connector %s", err)
+	}
 	connector := GlueConnector{
 		QDCExternalAPIClient: externalAPI,
 		GlueRepo:             glueClient,
