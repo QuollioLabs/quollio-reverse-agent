@@ -1115,3 +1115,33 @@ func TestFilterRootAsset(t *testing.T) {
 		}
 	}
 }
+
+func TestIsPrivilegesErr(t *testing.T) {
+	testCases := []struct {
+		Input  string
+		Expect bool
+	}{
+		{
+			Input:  "",
+			Expect: false,
+		},
+		{
+			Input:  "xxx",
+			Expect: false,
+		},
+		{
+			Input:  "Failed to ReflectMetadataToDataCatalog, UpdateVdpDatabaseDesc failed Query Execution failed pq: error modifying database: The user does not have enough privileges or does not have ADMIN privileges",
+			Expect: true,
+		},
+		{
+			Input:  "Failed to ReflectMetadataToDataCatalog,The user does not have enough privileges or does not have ADMIN privileges",
+			Expect: true,
+		},
+	}
+	for _, testCase := range testCases {
+		res := isPrivilegesErr(testCase.Input)
+		if !reflect.DeepEqual(res, testCase.Expect) {
+			t.Errorf("want %+v but got %+v", testCase.Expect, res)
+		}
+	}
+}
