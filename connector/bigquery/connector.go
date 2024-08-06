@@ -39,7 +39,10 @@ func NewBigqueryConnector(prefixForUpdate, overwriteMode string, logger *logger.
 	qdcClientID := os.Getenv("QDC_CLIENT_ID")
 	qdcClientSecret := os.Getenv("QDC_CLIENT_SECRET")
 	assetCreatedBy := os.Getenv("QDC_ASSET_CREATED_BY")
-	externalAPI := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret, logger)
+	externalAPI, err := qdc.NewQDCExternalAPI(qdcBaseURL, qdcClientID, qdcClientSecret, logger)
+	if err != nil {
+		return BigQueryConnector{}, fmt.Errorf("Failed to initialize QDCExternalAPI client in BigQuery Connector %s", err)
+	}
 	connector := BigQueryConnector{
 		QDCExternalAPIClient: externalAPI,
 		DataplexRepo:         dataplexClient,

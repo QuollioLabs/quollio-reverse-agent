@@ -49,7 +49,7 @@ func runReverseAgent(systemName *string) error {
 	logger.Info("Start ReflectMetadataToDataCatalog")
 	switch *systemName {
 	case "bigquery":
-		logger.Info("Start to create NewGlueConnector.")
+		logger.Info("Start to create NewBigQueryConnector.")
 		BqConnector, err := bigquery.NewBigqueryConnector(prefixForUpdate, overwriteMode, logger)
 		if err != nil {
 			logger.Error("Failed to NewBigqueryConnector")

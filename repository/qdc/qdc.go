@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
@@ -20,12 +21,13 @@ type QDCExternalAPI struct {
 	ClientID     string
 	ClientSecret string
 	HttpClient   *http.Client
+	AccessToken  string
 	Logger       *logger.BuiltinLogger
 }
 
 type QDCTokenResponse struct {
 	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
+	ExpiresIn   int64  `json:"expires_in"`
 	TokenType   string `json:"token_type"`
 }
 
@@ -75,7 +77,7 @@ type RuleTagIds struct {
 	ChildTagId  string `json:"child_tag_id"`
 }
 
-func NewQDCExternalAPI(baseURL, clientID, clientSecret string, logger *logger.BuiltinLogger) QDCExternalAPI {
+func NewQDCExternalAPI(baseURL, clientID, clientSecret string, logger *logger.BuiltinLogger) (QDCExternalAPI, error) {
 	httpClient := retryablehttp.NewClient()
 	httpClient.RetryMax = 10
 	httpClient.Logger = nil
@@ -86,7 +88,12 @@ func NewQDCExternalAPI(baseURL, clientID, clientSecret string, logger *logger.Bu
 		HttpClient:   httpClient.StandardClient(),
 		Logger:       logger,
 	}
-	return externalAPI
+	accessToken, err := externalAPI.GetAccessToken()
+	if err != nil {
+		return QDCExternalAPI{}, err
+	}
+	externalAPI.AccessToken = accessToken
+	return externalAPI, nil
 }
 
 func (q *QDCExternalAPI) postRequest(url string, payload *strings.Reader) (*http.Response, error) {
@@ -94,12 +101,34 @@ func (q *QDCExternalAPI) postRequest(url string, payload *strings.Reader) (*http
 	if err != nil {
 		return &http.Response{}, err
 	}
-	token, err := q.GetAccessToken()
+	token, _, err := new(jwt.Parser).ParseUnverified(q.AccessToken, jwt.MapClaims{})
+	if err != nil {
+		return nil, err
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, err
+	}
+	exp, ok := claims["exp"].(float64)
+	if !ok {
+		return nil, err
+	}
+	q.Logger.Debug("QDC Access token expiration timestamp %v", int64(exp))
+	if int64(exp) < time.Now().Unix() {
+		token, err := q.GetAccessToken()
+		if err != nil {
+			return nil, err
+		}
+		q.Logger.Debug("QDC Access token refreshed %v", int64(exp))
+		q.AccessToken = token
+	}
+
 	if err != nil {
 		return &http.Response{}, err
 	}
+
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+q.AccessToken)
 
 	resp, err := q.HttpClient.Do(req)
 	if err != nil {

@@ -12,6 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.11
 	github.com/aws/aws-sdk-go-v2/service/glue v1.79.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.6
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-retryablehttp v0.7.5
 	github.com/jmoiron/sqlx v1.4.0
