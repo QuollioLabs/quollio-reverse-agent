@@ -150,7 +150,11 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 				descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, descForUpdate)
 				err := d.DenodoDBClient.UpdateVdpDatabaseDesc(vdpDatabase.DatabaseName, descWithPrefix)
 				if err != nil {
-					return err
+					if isPrivilegesErr(err.Error()) {
+						d.Logger.Warning("Failed to update DB due to permission problem. Error: %s, DB Name: %s", err.Error(), vdpDatabase.DatabaseName)
+					} else {
+						return err
+					}
 				}
 				d.Logger.Debug("Updated database description. database name: %s.", vdpDatabase.DatabaseName)
 			}
@@ -164,6 +168,7 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 		for _, vdpTableAsset := range vdpTableAssets {
 			tableFQN := fmt.Sprint(vdpDatabase.DatabaseName, vdpTableAsset.ViewName)
 			tableGlobalID := utils.GetGlobalId(d.CompanyID, d.DenodoHostName, tableFQN, "table")
+			d.Logger.Debug("Will update table if condition is true. GlobalID: %s. DBName: %s TableName: %s ", tableGlobalID, vdpTableAsset.DatabaseName, vdpTableAsset.ViewName)
 			if qdcTableAsset, ok := qdcTableAssetsMap[tableGlobalID]; ok {
 				if qdcTableAsset.IsLost {
 					d.Logger.Debug("Skip table update because it is lost in qdc : %s", qdcTableAsset.PhysicalName)
@@ -174,7 +179,11 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 					descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, descForUpdate)
 					err := d.DenodoDBClient.UpdateVdpTableDesc(vdpTableAsset, descWithPrefix)
 					if err != nil {
-						return err
+						if isPrivilegesErr(err.Error()) {
+							d.Logger.Warning("Failed to update Table due to permission problem. Error: %s, DB Name: %s Table Name: %s", err.Error(), vdpTableAsset.DatabaseName, vdpTableAsset.ViewName)
+						} else {
+							return err
+						}
 					}
 					d.Logger.Debug("Updated table description. database name: %s. table name: %s", vdpTableAsset.DatabaseName, vdpTableAsset.ViewName)
 				}
@@ -198,11 +207,16 @@ func (d *DenodoConnector) ReflectVdpMetadataToDataCatalog(qdcRootAssetsMap, qdcT
 					continue
 				}
 				if shouldUpdateDenodoVdpColumn(d.PrefixForUpdate, d.OverwriteMode, vdpColumnAsset, qdcColumnAsset) {
+					d.Logger.Debug("Will update column. GlobalID: %s. DBName: %s TableName: %s ColumnName: %s", columnGlobalID, vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
 					descForUpdate := genUpdateString(qdcColumnAsset.LogicalName, qdcColumnAsset.Description)
 					descWithPrefix := utils.AddPrefixToStringIfNotHas(d.PrefixForUpdate, descForUpdate)
 					err := d.DenodoDBClient.UpdateVdpTableColumnDesc(vdpColumnAsset, descWithPrefix)
 					if err != nil {
-						return err
+						if isPrivilegesErr(err.Error()) {
+							d.Logger.Warning("Failed to update Column due to permission problem. Error: %s, DB Name: %s Table Name: %s Column Name: %s", err.Error(), vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
+						} else {
+							return err
+						}
 					}
 					d.Logger.Debug("Updated column description. database name: %s. table name: %s. column name: %s", vdpColumnAsset.DatabaseName, vdpColumnAsset.ViewName, vdpColumnAsset.ColumnName)
 				}
@@ -326,4 +340,8 @@ func getFilteredRootAssets(targetDBs []string, qdcRootAssets []qdc.Data) []qdc.D
 		targetRootAssets = qdcRootAssets
 	}
 	return targetRootAssets
+}
+
+func isPrivilegesErr(errMessage string) bool {
+	return strings.Contains(errMessage, "The user does not have enough privileges")
 }

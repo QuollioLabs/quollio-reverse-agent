@@ -86,7 +86,7 @@ func runReverseAgent(systemName *string) error {
 		logger.Info("Start to run ReflectMetadataToDataCatalog.")
 		err = DenodoConnector.ReflectMetadataToDataCatalog()
 		if err != nil {
-			logger.Error("Failed to ReflectMetadataToDataCatalog")
+			logger.Error("Failed to ReflectMetadataToDataCatalog, %s", err.Error())
 			return fmt.Errorf("Failed to ReflectMetadataToDataCatalog for Denodo")
 		}
 	default:

@@ -147,7 +147,7 @@ func (c *Client) UpdateVdpTableDesc(getViewResult models.GetViewsResult, descrip
 
 func (c *Client) UpdateVdpTableColumnDesc(getViewColumnResult models.GetViewColumnsResult, description string) error {
 	alterTableTarget := getAlterViewType(getViewColumnResult.ViewType)
-	alterStatement := fmt.Sprintf(`alter %s %s (alter column %s add (description = '%s'))`,
+	alterStatement := fmt.Sprintf("alter %s %s (alter column `%s` add (description = '%s'))",
 		alterTableTarget,
 		getViewColumnResult.ViewName,
 		getViewColumnResult.ColumnName,
@@ -155,7 +155,7 @@ func (c *Client) UpdateVdpTableColumnDesc(getViewColumnResult models.GetViewColu
 	)
 	err := c.ExecuteQuery(alterStatement)
 	if err != nil {
-		return fmt.Errorf("UpdateVdpTableColumnDesc failed %s", err)
+		return fmt.Errorf("UpdateVdpTableColumnDesc failed error: %s. query: %s", err, alterStatement)
 	}
 	return nil
 }
