@@ -51,6 +51,11 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 			d.Logger.Debug("Skip table update because it is lost in qdc : %s->%s", qdcDatabaseAsset.Name, tableAsset.PhysicalName)
 			continue
 		}
+		isSkipUpdateDatabaseByFilter := d.IsSkipUpdateDatabaseByFilter(qdcDatabaseAsset.Name)
+		if isSkipUpdateDatabaseByFilter {
+			d.Logger.Info("Skip ReflectLocalTableAttributeToDenodo because %s is not contained targetDBList", qdcDatabaseAsset.Name)
+			continue
+		}
 
 		if utils.IsStringContainJapanese(qdcDatabaseAsset.Name) || utils.IsStringContainJapanese(tableAsset.PhysicalName) {
 			d.Logger.Warning("Skip to update table because API doesn't allow japanese letter as an input. Database: %s, Table: %s", qdcDatabaseAsset.Name, tableAsset.PhysicalName)
@@ -100,6 +105,11 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 			continue
 		}
 
+		isSkipUpdateDatabaseByFilter := d.IsSkipUpdateDatabaseByFilter(qdcDatabaseAsset.Name)
+		if isSkipUpdateDatabaseByFilter {
+			d.Logger.Info("Skip ReflectLocalColumnAttributeToDenodo because %s is not contained targetDBList", qdcDatabaseAsset.Name)
+			continue
+		}
 		if utils.IsStringContainJapanese(qdcDatabaseAsset.Name) || utils.IsStringContainJapanese(qdcTableAsset.Name) {
 			d.Logger.Warning("Skip to update table because API doesn't allow japanese letter as an input. Database: %s, Table: %s", qdcDatabaseAsset.Name, qdcTableAsset.Name)
 			continue

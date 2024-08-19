@@ -234,8 +234,8 @@ func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog(qdcRootA
 		return err
 	}
 	for _, localDatabase := range localDatabases {
-		isLocalDatabaseContained := slices.Contains(d.DenodoQueryTargetDBs, localDatabase.DatabaseName)
-		if !isLocalDatabaseContained {
+		isSkipUpdateDatabaseByFilter := d.IsSkipUpdateDatabaseByFilter(localDatabase.DatabaseName)
+		if isSkipUpdateDatabaseByFilter {
 			d.Logger.Info("Skip ReflectLocalDatabaseDescToDenodo because %s is not contained targetDBList", localDatabase.DatabaseName)
 			continue
 		}
@@ -262,6 +262,16 @@ func (d *DenodoConnector) ReflectDenodoDataCatalogMetadataToDataCatalog(qdcRootA
 	}
 
 	return nil
+}
+
+func (d *DenodoConnector) IsSkipUpdateDatabaseByFilter(targetDBName string) bool {
+	if 1 <= len(d.DenodoQueryTargetDBs) {
+		isDatabaseContained := slices.Contains(d.DenodoQueryTargetDBs, targetDBName)
+		if !isDatabaseContained {
+			return true
+		}
+	}
+	return false
 }
 
 func convertQdcAssetListToMap(qdcAssetList []qdc.Data) map[string]qdc.Data {
