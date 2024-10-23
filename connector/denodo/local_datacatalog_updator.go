@@ -1,7 +1,6 @@
 package denodo
 
 import (
-	"fmt"
 	"quollio-reverse-agent/common/utils"
 	"quollio-reverse-agent/repository/denodo/rest"
 	"quollio-reverse-agent/repository/denodo/rest/models"
@@ -67,7 +66,17 @@ func (d *DenodoConnector) ReflectLocalTableAttributeToDenodo(tableAssets map[str
 		}
 		localViewDetail, err := d.DenodoRepo.GetViewDetails(qdcDatabaseAsset.Name, tableAsset.PhysicalName)
 		if err != nil {
-			return fmt.Errorf("Failed to GetViewDetails. err: %s", err.Error())
+			code, denodoErr := rest.GetErrorCode(err)
+			if denodoErr != nil {
+				return err
+			}
+			switch code {
+			case 404:
+				d.Logger.Warning("GetViewDetails failed due to the ErrorCode %v Skip this function. database name: %s. table name: %s", code, localViewDetail.DatabaseName, localViewDetail.Name)
+				continue
+			default:
+				return err
+			}
 		}
 		if shouldUpdateDenodoLocalTable(d.PrefixForUpdate, d.OverwriteMode, localViewDetail, tableAsset) {
 			descForUpdate := genUpdateString(tableAsset.LogicalName, tableAsset.Description)
@@ -120,7 +129,17 @@ func (d *DenodoConnector) ReflectLocalColumnAttributeToDenodo(columnAssets map[s
 		}
 		localViewColumns, err := d.DenodoRepo.GetViewColumns(qdcDatabaseAsset.Name, qdcTableAsset.Name)
 		if err != nil {
-			return err
+			code, denodoErr := rest.GetErrorCode(err)
+			if denodoErr != nil {
+				return err
+			}
+			switch code {
+			case 404:
+				d.Logger.Warning("GetViewColumns failed due to the ErrorCode %v Skip the function. database name: %s. table name: %s", code, qdcDatabaseAsset.Name, qdcTableAsset.Name)
+				continue
+			default:
+				return err
+			}
 		}
 		localViewColumnMap := convertLocalColumnListToMap(localViewColumns)
 		if localViewColumn, ok := localViewColumnMap[columnAsset.PhysicalName]; ok {
